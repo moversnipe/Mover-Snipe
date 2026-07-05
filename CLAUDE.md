@@ -19,19 +19,21 @@ npm run type-check # Run TypeScript compiler (no emit)
 
 ## Architecture
 
-**Stack**: Next.js 16, React 19, TypeScript 5, Tailwind CSS 4, Supabase, react-hook-form + zod
+**Stack**: Next.js 16, React 19, TypeScript 6, Tailwind CSS 4, Supabase, shadcn/ui on Base UI, react-hook-form + zod
 
 **Path alias**: `@/*` → `./src/*` (always use this for imports)
 
 ### Key Directories
 - `src/app/` - App Router pages (`page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`)
-- `src/components/ui/` - shadcn/ui components (40+)
+- `src/components/ui/` - shadcn/ui components (60+, incl. chat: message-scroller, message, bubble, attachment, marker)
 - `src/components/providers.tsx` - App providers (QueryClient, Theme)
 - `src/lib/supabase/` - Supabase client configuration
 - `src/hooks/` - Custom React hooks
 - `supabase/migrations/` - Database migrations
 
 ## Supabase Clients
+
+**Optional by default**: Supabase is disabled until env vars are set. When `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` are absent, `updateSession` middleware is a no-op (no auth redirects) and the `createClient`/`createAdminClient` factories throw a clear error. Use `isSupabaseConfigured()` from `@/lib/supabase/config` to branch. When the vars are set, all behavior is unchanged.
 
 **Critical**: Server client is async and requires `await`.
 
@@ -56,6 +58,7 @@ const adminSupabase = await createAdminClient()
 - Default to **Server Components**; add `"use client"` only for interactivity, browser APIs, or real-time
 - Prefer **Server Actions** over API routes
 - Always use shadcn/ui components from `@/components/ui/`
+- Components are built on **Base UI** (`@base-ui/react`), not Radix: compose triggers with the `render` prop (`<DialogTrigger render={<Button />}>icon</DialogTrigger>`), not `asChild`
 - Real-time subscriptions must be in Client Components
 
 ## React 19 + Server Actions
@@ -182,8 +185,9 @@ const MotionCard = motion.create(Card)
 
 ## Environment Variables
 
-Required:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY` (for admin client)
+**Supabase is optional** — the boilerplate runs without any of these. Setting them enables Supabase (auth middleware + clients); leaving them unset keeps Supabase disabled (middleware no-op, clients throw if called).
+
+- `NEXT_PUBLIC_SUPABASE_URL` (required to enable Supabase)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (required to enable Supabase)
+- `SUPABASE_SERVICE_ROLE_KEY` (additionally required for the admin client)
 - when designing UI or building frontend components, make sure to use the frontend-design skill

@@ -1,13 +1,22 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { isSupabaseConfigured } from '@/lib/supabase/config'
 
 /**
  * Middleware to update the session for authenticated users.
- * 
+ *
+ * When Supabase is not configured (env vars absent), this is a no-op: it
+ * returns the request untouched without creating a client or redirecting
+ * unauthenticated requests to the login page.
+ *
  * @param {NextRequest} request - The incoming request.
  * @returns {Promise<NextResponse>} The response object.
  */
 export async function updateSession(request: NextRequest) {
+  if (!isSupabaseConfigured()) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
