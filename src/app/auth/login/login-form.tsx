@@ -15,17 +15,13 @@ import { signIn, signUp, type AuthFormState } from "@/app/auth/login/actions"
 const initialState: AuthFormState = {}
 
 export const LoginForm = () => {
-  const [signInState, signInAction, signInPending] = useActionState(
-    signIn,
+  const [state, formAction, isPending] = useActionState(
+    (prev: AuthFormState, formData: FormData) =>
+      formData.get("intent") === "sign-up"
+        ? signUp(prev, formData)
+        : signIn(prev, formData),
     initialState
   )
-  const [signUpState, signUpAction, signUpPending] = useActionState(
-    signUp,
-    initialState
-  )
-
-  const state = signUpState.success ? signUpState : signInState
-  const isPending = signInPending || signUpPending
 
   return (
     <form className="flex flex-col gap-6">
@@ -53,18 +49,25 @@ export const LoginForm = () => {
           <FieldError>{state.errors?.password?.[0]}</FieldError>
         </Field>
         <FieldError>{state.errors?.form?.[0]}</FieldError>
-        {signUpState.success && (
-          <p className="text-sm text-muted-foreground">
-            {signUpState.message}
-          </p>
+        {state.success && (
+          <p className="text-sm text-muted-foreground">{state.message}</p>
         )}
         <div className="flex flex-col gap-2">
-          <Button formAction={signInAction} disabled={isPending}>
+          <Button
+            type="submit"
+            name="intent"
+            value="sign-in"
+            formAction={formAction}
+            disabled={isPending}
+          >
             Sign in
           </Button>
           <Button
+            type="submit"
             variant="outline"
-            formAction={signUpAction}
+            name="intent"
+            value="sign-up"
+            formAction={formAction}
             disabled={isPending}
           >
             Create account
