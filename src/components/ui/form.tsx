@@ -1,8 +1,8 @@
 "use client"
 
 import * as React from "react"
-import type { Label as LabelPrimitive } from "radix-ui"
-import { Slot } from "radix-ui"
+import { mergeProps } from "@base-ui/react/merge-props"
+import { useRender } from "@base-ui/react/use-render"
 import {
   Controller,
   FormProvider,
@@ -25,9 +25,8 @@ type FormFieldContextValue<
   name: TName
 }
 
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
-)
+const FormFieldContext =
+  React.createContext<FormFieldContextValue | null>(null)
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
@@ -45,13 +44,17 @@ const FormField = <
 const useFormField = () => {
   const fieldContext = React.useContext(FormFieldContext)
   const itemContext = React.useContext(FormItemContext)
-  const { getFieldState } = useFormContext()
-  const formState = useFormState({ name: fieldContext.name })
-  const fieldState = getFieldState(fieldContext.name, formState)
 
   if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>")
   }
+  if (!itemContext) {
+    throw new Error("useFormField should be used within <FormItem>")
+  }
+
+  const { getFieldState } = useFormContext()
+  const formState = useFormState({ name: fieldContext.name })
+  const fieldState = getFieldState(fieldContext.name, formState)
 
   const { id } = itemContext
 
@@ -69,9 +72,8 @@ type FormItemContextValue = {
   id: string
 }
 
-const FormItemContext = React.createContext<FormItemContextValue>(
-  {} as FormItemContextValue
-)
+const FormItemContext =
+  React.createContext<FormItemContextValue | null>(null)
 
 function FormItem({ className, ...props }: React.ComponentProps<"div">) {
   const id = React.useId()
@@ -90,7 +92,7 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
 function FormLabel({
   className,
   ...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: React.ComponentProps<typeof Label>) {
   const { error, formItemId } = useFormField()
 
   return (
@@ -104,22 +106,28 @@ function FormLabel({
   )
 }
 
-function FormControl({ ...props }: React.ComponentProps<typeof Slot.Root>) {
+function FormControl({
+  render,
+  ...props
+}: useRender.ComponentProps<"input">) {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
-  return (
-    <Slot.Root
-      data-slot="form-control"
-      id={formItemId}
-      aria-describedby={
-        !error
+  return useRender({
+    render,
+    props: mergeProps<"input">(
+      {
+        id: formItemId,
+        "aria-describedby": !error
           ? `${formDescriptionId}`
-          : `${formDescriptionId} ${formMessageId}`
-      }
-      aria-invalid={!!error}
-      {...props}
-    />
-  )
+          : `${formDescriptionId} ${formMessageId}`,
+        "aria-invalid": !!error,
+      },
+      props
+    ),
+    state: {
+      slot: "form-control",
+    },
+  })
 }
 
 function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
