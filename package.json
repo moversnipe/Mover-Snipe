@@ -62,5 +62,11 @@
   "optionalDependencies": {
     "@tailwindcss/oxide-linux-x64-gnu": "^4.3.2",
     "lightningcss-linux-x64-gnu": "^1.32.0"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "^8.5.18",
+      "sharp": "^0.35.0"
+    }
   }
 }
