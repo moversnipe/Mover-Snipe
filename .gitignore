@@ -44,3 +44,4 @@ next-env.d.ts
 raw-data/*
 
 .claude/settings.local.json
+.claude/worktrees/
