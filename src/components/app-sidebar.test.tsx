@@ -68,7 +68,7 @@ describe("AppSidebar", () => {
   })
 
   it("keeps the parent entry current on a nested path", () => {
-    renderSidebar("/listings/some-listing")
+    renderSidebar(`${ROUTES.listings}/some-listing`)
 
     expect(screen.getByRole("link", { name: "Listings" })).toHaveAttribute(
       "aria-current",
