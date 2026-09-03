@@ -5,8 +5,14 @@ import { redirect } from "next/navigation"
 
 import { DEFAULT_AUTHENTICATED_PATH, ROUTES } from "@/config/routes"
 import { absoluteUrl } from "@/config/site"
+import { getUser } from "@/features/auth/queries"
 import { sanitizeNextPath } from "@/features/auth/redirect"
-import { credentialsSchema } from "@/features/auth/schemas"
+import {
+  credentialsSchema,
+  forgotPasswordSchema,
+  signUpSchema,
+  updatePasswordSchema,
+} from "@/features/auth/schemas"
 import {
   type ActionResult,
   fail,
@@ -18,6 +24,13 @@ import { logger } from "@/lib/logger"
 import { createClient } from "@/lib/supabase/server"
 
 export type AuthActionResult = ActionResult<{ message?: string }>
+
+/** Absolute URL Supabase Auth sends the user back to after an email link. */
+const emailRedirectUrl = (next: string): string => {
+  const url = new URL(absoluteUrl(ROUTES.authCallback))
+  url.searchParams.set("next", next)
+  return url.toString()
+}
 
 export const signIn = async (
   _prev: AuthActionResult | undefined,
@@ -50,23 +63,24 @@ export const signUp = async (
   _prev: AuthActionResult | undefined,
   formData: FormData
 ): Promise<AuthActionResult> => {
-  const validated = credentialsSchema.safeParse({
+  const validated = signUpSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
   })
   if (!validated.success) return failValidation(validated.error)
 
+  const { email, password } = validated.data
   const next = sanitizeNextPath(
     formData.get("next")?.toString(),
     DEFAULT_AUTHENTICATED_PATH
   )
-  const callbackUrl = new URL(absoluteUrl(ROUTES.authCallback))
-  callbackUrl.searchParams.set("next", next)
 
   const supabase = await createClient()
   const { data, error } = await supabase.auth.signUp({
-    ...validated.data,
-    options: { emailRedirectTo: callbackUrl.toString() },
+    email,
+    password,
+    options: { emailRedirectTo: emailRedirectUrl(next) },
   })
   if (error) {
     logger.warn("Sign-up failed", { code: error.code })
@@ -76,14 +90,99 @@ export const signUp = async (
     )
   }
 
-  // With email confirmation disabled (the Supabase CLI default), signUp
-  // returns a session and the user is already signed in.
-  if (!data.session) {
-    return ok({ message: "Check your email to confirm your account." })
-  }
+  // With email confirmation enabled the user has no session yet and must open
+  // the link we just sent; the success page explains that. With confirmation
+  // disabled (the Supabase CLI default) signUp already returns a session.
+  if (!data.session) redirect(ROUTES.signUpSuccess)
 
   revalidatePath(ROUTES.home, "layout")
   redirect(next)
+}
+
+/**
+ * Sends a password recovery link. The result is deliberately identical whether
+ * or not the address has an account, so the form cannot be used to discover
+ * which emails are registered.
+ */
+export const requestPasswordReset = async (
+  _prev: AuthActionResult | undefined,
+  formData: FormData
+): Promise<AuthActionResult> => {
+  const validated = forgotPasswordSchema.safeParse({
+    email: formData.get("email"),
+  })
+  if (!validated.success) return failValidation(validated.error)
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    validated.data.email,
+    { redirectTo: emailRedirectUrl(ROUTES.updatePassword) }
+  )
+  if (error) logger.warn("Password reset request failed", { code: error.code })
+
+  return ok({
+    message:
+      "If an account exists for that address, a reset link is on its way.",
+  })
+}
+
+/**
+ * Sets a new password for the signed-in user. Reached from the recovery link,
+ * which establishes a session before this page is rendered. Supabase's
+ * `secure_password_change` decides whether an older session is still allowed to
+ * do this; every other session is revoked once the password changes.
+ */
+export const updatePassword = async (
+  _prev: AuthActionResult | undefined,
+  formData: FormData
+): Promise<AuthActionResult> => {
+  const validated = updatePasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  })
+  if (!validated.success) return failValidation(validated.error)
+
+  const user = await getUser()
+  if (!user) {
+    return fail(
+      ErrorCode.UNAUTHENTICATED,
+      "Your reset link has expired. Request a new one."
+    )
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.auth.updateUser({
+    password: validated.data.password,
+  })
+  if (error) {
+    logger.warn("Password update failed", { code: error.code, userId: user.id })
+    // secure_password_change lets Supabase reject a session that is no longer
+    // fresh; that is a different fix for the user than a rejected password.
+    if (error.code === "reauthentication_needed") {
+      return fail(
+        ErrorCode.UNAUTHENTICATED,
+        "For security, sign in again before changing your password."
+      )
+    }
+    return fail(
+      ErrorCode.VALIDATION,
+      "Could not update the password. Choose a different one and try again."
+    )
+  }
+
+  // Drop every other session so a stolen cookie cannot outlive the reset.
+  const { error: signOutError } = await supabase.auth.signOut({
+    scope: "others",
+  })
+  if (signOutError) {
+    logger.warn("Could not revoke other sessions after password update", {
+      code: signOutError.code,
+      userId: user.id,
+    })
+  }
+
+  revalidatePath(ROUTES.home, "layout")
+  redirect(DEFAULT_AUTHENTICATED_PATH)
 }
 
 /**

@@ -18,5 +18,5 @@ wired identically.
 - Authorise against the database with the user's client so RLS applies. Re-check any id the client sent (price ids, record ids) against the database before acting on it.
 - `redirect()` throws a special error. Call it outside `try/catch`, after all validation, or it will be swallowed.
 - After a mutation, call `revalidatePath`/`revalidateTag` for the affected routes.
-- Log failures with `logger.error` including ids, never secrets or full payloads.
-- Client side: bind with `useActionState(action, undefined)`; show `fieldError(state, "field")` under inputs; use `useFormStatus()` in a child submit button when pending state is needed there. (`useActionState` replaced React's old `useFormState`; `useFormStatus` is current and correct.)
+- Log failures with `logger.error` including ids, never secrets or full payloads. Expected auth outcomes (bad credentials, a password the provider rejects) are `logger.warn`, since they are user error rather than a fault.
+- Client side: bind with `useActionState(action, undefined)`; show `fieldError(state, "field")` under inputs and `formError(state)` for the error or confirmation that belongs to the form as a whole; use `useFormStatus()` in a child submit button when pending state is needed there. (`useActionState` replaced React's old `useFormState`; `useFormStatus` is current and correct.)

@@ -12,8 +12,8 @@ AI-assisted changes follow the same conventions as human ones.
 
 **Auth**
 
-- Email + password sign-in and sign-up via Server Actions (`/auth/login`), Zod-validated.
-- PKCE callback (`/auth/callback`) with a sanitized `next` redirect, and an error page.
+- Complete email + password flow via Server Actions, Zod-validated: sign in (`/auth/login`), sign up (`/auth/sign-up`), confirmation notice (`/auth/sign-up-success`), password reset request (`/auth/forgot-password`), and new password (`/auth/update-password`).
+- PKCE callback (`/auth/callback`) with a sanitized `next` redirect, resolved against `NEXT_PUBLIC_SITE_URL` rather than the request host, and an error page (`/auth/auth-code-error`).
 - Session refresh and route protection in `src/proxy.ts` driven by `src/config/routes.ts`, using `getClaims()` to verify the JWT signature locally against the project's signing keys.
 - Built for Supabase's **publishable/secret API keys** and **asymmetric JWT signing keys**; Edge Functions run with `verify_jwt = false` and authorise in code (`supabase/functions/whoami` is the template).
 - `profiles` table created for every user by a database trigger.
@@ -70,9 +70,10 @@ as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the secret key as
 
 Email confirmation is **off** in the CLI's default `config.toml`
 (`[auth.email] enable_confirmations = false`), so local sign-up signs the user
-in immediately. To test the confirmation flow, set it to `true`; the emails are
-then viewable in the local email testing server (`[local_smtp]`, port 54324 by
-default). Restart the stack after editing `config.toml`
+in immediately. To test the confirmation flow, set it to `true`; sign-up then
+lands on `/auth/sign-up-success` and the emails are viewable in the local email
+testing server (`[local_smtp]`, port 54324 by default). Password reset emails
+show up there too. Restart the stack after editing `config.toml`
 (`npm run db:stop && npm run db:start`).
 
 ### 3. Stripe (sandbox or test mode)
@@ -117,11 +118,13 @@ src/
 │   ├── (app)/                  Signed-in area; layout enforces auth
 │   │   ├── dashboard/page.tsx
 │   │   └── billing/page.tsx
-│   ├── auth/                   login/, callback/route.ts, auth-code-error/
+│   ├── auth/                   layout.tsx · login/ · sign-up/ · sign-up-success/
+│   │                           forgot-password/ · update-password/
+│   │                           callback/route.ts · auth-code-error/
 │   ├── api/                    health/, webhooks/stripe/
 │   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
 ├── features/                   Domain modules
-│   ├── auth/                   schemas · queries · actions · redirect · components/
+│   ├── auth/                   schemas · queries · actions · redirect · otp · components/
 │   └── billing/                schemas · queries · actions · customers · webhook-handlers · enums · format · components/
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI
@@ -180,12 +183,17 @@ All variables are required (see `.env.example`):
 ## Deploying
 
 1. Create a hosted Supabase project and apply the migrations from your machine with `npx supabase link` then `npx supabase db push` (agents are blocked from doing this).
-2. In the Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to your domain and add `https://<your-domain>/auth/callback` to **Redirect URLs**.
-3. Settings → API Keys → **Publishable and secret API keys**: create the keys (they are named `default`). Use them for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`; do not ship the legacy `anon`/`service_role` JWTs. Each variable takes a single key's value — Edge Functions separately receive all of them as the `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS` JSON objects.
-4. Settings → JWT Keys: click **Migrate JWT secret**, then **Rotate keys** to the standby ES256 key. After at least the access-token lifetime plus a margin (75 minutes at the default 1 hour), revoke the legacy secret. `getClaims()` picks up the new keys automatically through the JWKS endpoint.
-5. Deploy Edge Functions with `npx supabase functions deploy`; `config.toml` already disables gateway JWT verification for each, and `withSupabase` authorises in code.
-6. In Stripe (live mode) add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` subscribed to: `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, `price.deleted`, `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Use its signing secret as `STRIPE_WEBHOOK_SECRET`.
-7. Set all six environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
+2. In the Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to your domain and add `https://<your-domain>/auth/callback` to **Redirect URLs**. The default email templates route through that callback; nothing else needs to be allow-listed.
+3. Still under Authentication, harden the settings the local `config.toml` cannot set for you — each one closes a gap the app cannot close on its own:
+   - **Confirm email: on.** With it off, sign-up answers differently for a registered address than for a new one, which lets anyone enumerate your users. On, both outcomes land on `/auth/sign-up-success`.
+   - **Minimum password length: 8**, matching `passwordSchema` in `src/features/auth/schemas.ts`. The Auth API is public, so the Zod check alone does not bind it.
+   - **Secure password change: on**, so a session that is no longer fresh cannot set a new password without reauthenticating. The recovery-link flow is unaffected: that session is new.
+   - **Enable CAPTCHA** and review the email rate limits before configuring custom SMTP. `/auth/forgot-password` is public, and the default per-address throttle is one send per second.
+4. Settings → API Keys → **Publishable and secret API keys**: create the keys (they are named `default`). Use them for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`; do not ship the legacy `anon`/`service_role` JWTs. Each variable takes a single key's value — Edge Functions separately receive all of them as the `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS` JSON objects.
+5. Settings → JWT Keys: click **Migrate JWT secret**, then **Rotate keys** to the standby ES256 key. After at least the access-token lifetime plus a margin (75 minutes at the default 1 hour), revoke the legacy secret. `getClaims()` picks up the new keys automatically through the JWKS endpoint.
+6. Deploy Edge Functions with `npx supabase functions deploy`; `config.toml` already disables gateway JWT verification for each, and `withSupabase` authorises in code.
+7. In Stripe (live mode) add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` subscribed to: `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, `price.deleted`, `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Use its signing secret as `STRIPE_WEBHOOK_SECRET`.
+8. Set all six environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
 
 ## Learn more
 

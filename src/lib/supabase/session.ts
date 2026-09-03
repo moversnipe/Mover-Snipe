@@ -5,6 +5,7 @@ import { createServerClient } from "@supabase/ssr"
 import {
   DEFAULT_AUTHENTICATED_PATH,
   ROUTES,
+  isAuthEntryPath,
   isPublicPath,
 } from "@/config/routes"
 import { clientEnv } from "@/lib/env/client"
@@ -14,7 +15,7 @@ import type { Database } from "@/lib/supabase/database.types"
  * Refreshes the Supabase session cookie on every matched request and enforces
  * route access:
  *  - no session + non-public path  -> redirect to login (with `next`)
- *  - session + login page          -> redirect to the app
+ *  - session + anonymous auth page -> redirect to the app
  *
  * Called from src/proxy.ts. Public paths are declared in src/config/routes.ts.
  */
@@ -62,7 +63,7 @@ export const updateSession = async (request: NextRequest) => {
     return NextResponse.redirect(url)
   }
 
-  if (isSignedIn && pathname === ROUTES.login) {
+  if (isSignedIn && isAuthEntryPath(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = DEFAULT_AUTHENTICATED_PATH
     url.search = ""

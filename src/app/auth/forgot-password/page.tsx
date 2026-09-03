@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { ROUTES } from "@/config/routes"
-import { Button } from "@/components/ui/button"
+import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form"
 import {
   Card,
   CardContent,
@@ -12,32 +12,32 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const metadata: Metadata = { title: "Sign in failed" }
+export const metadata: Metadata = { title: "Reset password" }
 
-const AuthCodeErrorPage = () => (
+// Signed-in users never reach this page: src/proxy.ts redirects them.
+const ForgotPasswordPage = () => (
   <Card>
     <CardHeader>
-      <CardTitle>Sign in failed</CardTitle>
+      <CardTitle>Reset your password</CardTitle>
       <CardDescription>
-        The confirmation link may have expired or already been used. Please try
-        signing in again.
+        Enter your email and we will send you a link to choose a new password.
       </CardDescription>
     </CardHeader>
     <CardContent>
-      <Button render={<Link href={ROUTES.login} />}>Back to sign in</Button>
+      <ForgotPasswordForm />
     </CardContent>
     <CardFooter>
       <p className="text-sm text-muted-foreground">
-        Need a new password link?{" "}
+        Remembered it?{" "}
         <Link
-          href={ROUTES.forgotPassword}
+          href={ROUTES.login}
           className="text-foreground underline underline-offset-4"
         >
-          Request one
+          Sign in
         </Link>
       </p>
     </CardFooter>
   </Card>
 )
 
-export default AuthCodeErrorPage
+export default ForgotPasswordPage

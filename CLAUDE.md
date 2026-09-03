@@ -51,19 +51,19 @@ src/
   app/                   Routes only. Thin pages/layouts; no business logic.
     (marketing)/         Public pages            -> /
     (app)/               Signed-in pages         -> /dashboard, /billing (layout calls requireUser)
-    auth/                Login, PKCE callback, auth error page
+    auth/                Shared layout, login, sign-up (+ success), forgot/update password, PKCE callback, auth error page
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
-    auth/                Credentials schema, getUser/requireUser, sign-in/up/out, login form
+    auth/                Credentials/password schemas, getUser/requireUser, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms
     billing/             Products/prices/subscription queries, checkout + portal actions, webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
   components/            App-wide, domain-free pieces (providers, theme toggle)
-  config/                routes.ts (ROUTES, public paths), site.ts (name, URL, absoluteUrl)
+  config/                routes.ts (ROUTES, public paths, anonymous-only auth paths), site.ts (name, URL, absoluteUrl)
   lib/                   Domain-free infrastructure (see .claude/rules/lib.md)
     env/                 Zod-validated clientEnv / serverEnv (only place that reads process.env)
     errors.ts            ErrorCode, AppError, HTTP status map
-    actions/result.ts    ActionResult contract for Server Actions
+    actions/result.ts    ActionResult contract for Server Actions (ok/fail/fieldError/formError)
     api/                 handler.ts (createHandler), validate.ts, response.ts, idempotency.ts + webhook-event-store.ts (runOnce ledger)
     logger.ts            Structured JSON logger
     supabase/            client.ts, server.ts, admin.ts, session.ts, database.types.ts
@@ -138,7 +138,8 @@ src/
 `"use server"` file → Zod validation → `getUser()` → RLS-scoped work → return
 `ok()`/`fail()`/`failValidation()`/`failFromError()` from `src/lib/actions/result.ts`
 → `revalidatePath` → `redirect()` outside `try/catch`. Client binds with
-`useActionState(action, undefined)` and reads `fieldError(state, "field")`.
+`useActionState(action, undefined)`, reads `fieldError(state, "field")` under
+inputs and `formError(state)` for the form-level line.
 `useFormStatus()` is the correct hook for pending state in child submit buttons.
 Redirect-only, input-less actions such as `signOut` may return `Promise<void>`.
 Error messages returned to users are fixed strings; provider messages are logged, never forwarded.

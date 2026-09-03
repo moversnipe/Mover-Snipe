@@ -47,3 +47,16 @@ export const fieldError = (
   field: string
 ): string | undefined =>
   result && !result.ok ? result.error.fieldErrors?.[field]?.[0] : undefined
+
+/**
+ * Reads the error that belongs to the form as a whole rather than to one
+ * input: the top-level message when there are no field errors, otherwise the
+ * issues collected under the reserved "form" key by `failValidation`.
+ */
+export const formError = (
+  result: ActionResult<unknown> | undefined
+): string | undefined => {
+  if (!result || result.ok) return undefined
+  if (!result.error.fieldErrors) return result.error.message
+  return fieldError(result, "form")
+}
