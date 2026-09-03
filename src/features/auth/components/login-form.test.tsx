@@ -14,7 +14,9 @@ describe("LoginForm", () => {
     render(<LoginForm />)
     expect(screen.getByLabelText("Email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled()
+    expect(
+      screen.getByRole("button", { name: "Sign In with Email" })
+    ).toBeEnabled()
   })
 
   it("links to the password reset page", () => {

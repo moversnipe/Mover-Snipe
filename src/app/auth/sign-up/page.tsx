@@ -2,16 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { DEFAULT_AUTHENTICATED_PATH, ROUTES } from "@/config/routes"
+import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
+import { AuthTopBar } from "@/features/auth/components/auth-top-bar"
 import { SignUpForm } from "@/features/auth/components/sign-up-form"
 import { sanitizeNextPath } from "@/features/auth/redirect"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { FieldDescription } from "@/components/ui/field"
 
 export const metadata: Metadata = { title: "Create account" }
 
@@ -26,28 +21,17 @@ const SignUpPage = async ({ searchParams }: SignUpPageProps) => {
   const loginHref = `${ROUTES.login}?next=${encodeURIComponent(safeNext)}`
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Create your account</CardTitle>
-        <CardDescription>
-          Use your email and pick a password to get started.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <SignUpForm next={safeNext} />
-      </CardContent>
-      <CardFooter>
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            href={loginHref}
-            className="text-foreground underline underline-offset-4"
-          >
-            Sign in
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
+    <>
+      <AuthTopBar link={{ href: loginHref, label: "Login" }} />
+      <AuthPageHeader
+        title="Create an account"
+        description="Enter your email below to create your account"
+      />
+      <SignUpForm next={safeNext} />
+      <FieldDescription className="px-6 text-center">
+        Already have an account? <Link href={loginHref}>Sign in</Link>.
+      </FieldDescription>
+    </>
   )
 }
 

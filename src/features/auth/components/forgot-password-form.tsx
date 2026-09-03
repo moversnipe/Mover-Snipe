@@ -18,23 +18,31 @@ export const ForgotPasswordForm = () => {
   const [state, formAction] = useActionState(requestPasswordReset, undefined)
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
-      <FieldGroup>
-        <Field>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="you@example.com"
-            required
-          />
-          <FieldError>{fieldError(state, "email")}</FieldError>
-        </Field>
-        <AuthFormMessage state={state} />
-        <AuthSubmitButton>Send reset link</AuthSubmitButton>
-      </FieldGroup>
-    </form>
+    <div className="grid gap-6">
+      <form action={formAction}>
+        <FieldGroup>
+          <Field>
+            <FieldLabel className="sr-only" htmlFor="email">
+              Email
+            </FieldLabel>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="name@example.com"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
+              required
+            />
+            <FieldError>{fieldError(state, "email")}</FieldError>
+          </Field>
+          <AuthFormMessage state={state} />
+          <Field>
+            <AuthSubmitButton>Send reset link</AuthSubmitButton>
+          </Field>
+        </FieldGroup>
+      </form>
+    </div>
   )
 }

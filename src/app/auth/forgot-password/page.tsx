@@ -2,42 +2,26 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { ROUTES } from "@/config/routes"
+import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
+import { AuthTopBar } from "@/features/auth/components/auth-top-bar"
 import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { FieldDescription } from "@/components/ui/field"
 
 export const metadata: Metadata = { title: "Reset password" }
 
 // Signed-in users never reach this page: src/proxy.ts redirects them.
 const ForgotPasswordPage = () => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Reset your password</CardTitle>
-      <CardDescription>
-        Enter your email and we will send you a link to choose a new password.
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <ForgotPasswordForm />
-    </CardContent>
-    <CardFooter>
-      <p className="text-sm text-muted-foreground">
-        Remembered it?{" "}
-        <Link
-          href={ROUTES.login}
-          className="text-foreground underline underline-offset-4"
-        >
-          Sign in
-        </Link>
-      </p>
-    </CardFooter>
-  </Card>
+  <>
+    <AuthTopBar link={{ href: ROUTES.login, label: "Login" }} />
+    <AuthPageHeader
+      title="Reset your password"
+      description="Enter your email below and we will send you a reset link"
+    />
+    <ForgotPasswordForm />
+    <FieldDescription className="px-6 text-center">
+      Remembered it? <Link href={ROUTES.login}>Sign in</Link>.
+    </FieldDescription>
+  </>
 )
 
 export default ForgotPasswordPage

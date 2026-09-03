@@ -15,7 +15,9 @@ describe("SignUpForm", () => {
     expect(screen.getByLabelText("Email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
     expect(screen.getByLabelText("Confirm password")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled()
+    expect(
+      screen.getByRole("button", { name: "Sign Up with Email" })
+    ).toBeEnabled()
   })
 
   it("asks the browser for a new password, not a saved one", () => {
