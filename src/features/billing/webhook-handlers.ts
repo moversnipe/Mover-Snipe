@@ -13,7 +13,6 @@ import { logger } from "@/lib/logger"
 import { stripe } from "@/lib/stripe/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { TablesInsert } from "@/lib/supabase/database.types"
-import { throwIfError } from "@/lib/supabase/errors"
 
 // Admin client throughout: the webhook runs with no user session, and the
 // mirror tables intentionally have no client write policies. Every event is
@@ -35,6 +34,10 @@ export const HANDLED_EVENT_TYPES = new Set<Stripe.Event.Type>([
   "customer.subscription.updated",
   "customer.subscription.deleted",
 ])
+
+const throwIfError = (error: { message: string } | null, context: string) => {
+  if (error) throw new Error(`${context}: ${error.message}`)
+}
 
 const upsertProduct = async (product: Stripe.Product) => {
   const admin = createAdminClient()

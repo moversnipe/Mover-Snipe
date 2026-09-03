@@ -5,7 +5,6 @@ import { redirect } from "next/navigation"
 
 import { ROUTES } from "@/config/routes"
 import { AppError, ErrorCode } from "@/lib/errors"
-import { throwIfError } from "@/lib/supabase/errors"
 import { createClient } from "@/lib/supabase/server"
 
 /** Identity established from verified JWT claims. */
@@ -55,6 +54,6 @@ export const getProfile = cache(async (userId: string) => {
     .eq("id", userId)
     .maybeSingle()
 
-  throwIfError(error, "getProfile")
+  if (error) throw error
   return data
 })

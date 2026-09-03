@@ -2,7 +2,6 @@ import "server-only"
 
 import { cache } from "react"
 
-import { throwIfError } from "@/lib/supabase/errors"
 import { createClient } from "@/lib/supabase/server"
 
 /** Active products with their active prices, for the pricing table. RLS-filtered. */
@@ -17,7 +16,7 @@ export const getProductsWithPrices = cache(async () => {
     .eq("prices.active", true)
     .order("name")
 
-  throwIfError(error, "getProductsWithPrices")
+  if (error) throw error
   return data
 })
 
@@ -35,6 +34,6 @@ export const getActiveSubscription = cache(async (userId: string) => {
     .limit(1)
     .maybeSingle()
 
-  throwIfError(error, "getActiveSubscription")
+  if (error) throw error
   return data
 })

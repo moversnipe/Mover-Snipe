@@ -35,6 +35,6 @@ requirements.
 - Client Components: `createClient()` from `client.ts`.
 - Admin: `createAdminClient()` from `admin.ts` only for rows that intentionally have no client policy, and only in server code that is not reachable with user-controlled ids.
 - Always select explicit columns; never `select("*")`.
-- Treat Supabase `error` as fatal in queries and as a failed `ActionResult` in actions. In queries, throw it with `throwIfError(error, "<context>")` from `@/lib/supabase/errors`, never `throw error`: `postgrest-js` returns a plain `{ code, details, hint, message }` object at runtime even though it types the failure as `PostgrestError extends Error`, so throwing it directly loses the stack and Next.js renders it as a bare `@E394` digest with no application frames and nothing in the log naming the query. `@supabase/auth-js` errors are real `Error`s, so auth code paths handle them directly.
+- Treat Supabase `error` as fatal in queries (throw) and as a failed `ActionResult` in actions.
 - `public.webhook_events` is written only through `src/lib/api/webhook-event-store.ts`; `public.claim_webhook_event` is executable by `service_role` only.
 - Realtime: prefer private `broadcast` channels; do not add `postgres_changes` listeners.

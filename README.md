@@ -38,7 +38,6 @@ AI-assisted changes follow the same conventions as human ones.
 - `src/lib/actions/result.ts`: one `ActionResult` shape for every Server Action.
 - `src/lib/api/`: `createHandler` wrapper, request validation helpers, and one JSON envelope for every Route Handler; a structure test keeps new endpoints on the same shape.
 - `src/lib/logger.ts`: structured JSON logging.
-- `src/lib/supabase/errors.ts`: `throwIfError` turns a failed PostgREST result into a logged, properly stacked `Error` instead of a bare digest.
 - Root `error.tsx`, `global-error.tsx`, `loading.tsx`, `not-found.tsx`.
 - 60+ shadcn/ui components (Base UI, `render` prop composition), dark mode via `next-themes`.
 - Vitest + Testing Library, ESLint, Prettier (with Tailwind class sorting), strict TypeScript, GitHub Actions CI, Dependabot.
@@ -145,7 +144,7 @@ src/
 │   ├── env/                    client.ts · server.ts
 │   ├── actions/result.ts       ActionResult contract
 │   ├── api/                    handler · validate · response · idempotency · webhook-event-store
-│   ├── supabase/               client · server · admin · session · errors · database.types
+│   ├── supabase/               client · server · admin · session · database.types
 │   ├── stripe/                 server · webhooks
 │   ├── errors.ts · logger.ts · utils.ts
 ├── hooks/                      use-mobile.ts
