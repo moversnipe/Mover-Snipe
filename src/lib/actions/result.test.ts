@@ -6,6 +6,7 @@ import {
   failFromError,
   failValidation,
   fieldError,
+  formError,
   ok,
 } from "@/lib/actions/result"
 import { AppError, ErrorCode } from "@/lib/errors"
@@ -37,5 +38,33 @@ describe("ActionResult helpers", () => {
       expect(unknown.error.code).toBe(ErrorCode.INTERNAL)
       expect(unknown.error.message).not.toContain("secret")
     }
+  })
+})
+
+describe("formError", () => {
+  it("returns nothing for a missing or successful result", () => {
+    expect(formError(undefined)).toBeUndefined()
+    expect(formError(ok({ id: 1 }))).toBeUndefined()
+  })
+
+  it("returns the top-level message when there are no field errors", () => {
+    expect(formError(fail(ErrorCode.UNAUTHENTICATED, "Invalid email"))).toBe(
+      "Invalid email"
+    )
+  })
+
+  it("prefers the reserved form key over the generic message", () => {
+    const result = fail(ErrorCode.VALIDATION, "Please fix the errors below.", {
+      form: ["Something is off"],
+      email: ["Enter a valid email address"],
+    })
+    expect(formError(result)).toBe("Something is off")
+  })
+
+  it("stays quiet when only per-field errors are present", () => {
+    const result = fail(ErrorCode.VALIDATION, "Please fix the errors below.", {
+      email: ["Enter a valid email address"],
+    })
+    expect(formError(result)).toBeUndefined()
   })
 })

@@ -37,7 +37,14 @@ const HomePage = async () => {
               Open dashboard
             </Button>
           ) : (
-            <Button render={<Link href={ROUTES.login} />}>Sign in</Button>
+            <>
+              <Button render={<Link href={ROUTES.signUp} />}>
+                Create account
+              </Button>
+              <Button variant="outline" render={<Link href={ROUTES.login} />}>
+                Sign in
+              </Button>
+            </>
           )}
           <Button variant="outline" render={<Link href={ROUTES.billing} />}>
             View plans

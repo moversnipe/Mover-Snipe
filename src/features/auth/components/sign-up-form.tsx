@@ -1,14 +1,13 @@
 "use client"
 
 import { useActionState } from "react"
-import Link from "next/link"
 
-import { ROUTES } from "@/config/routes"
-import { signIn } from "@/features/auth/actions"
+import { signUp } from "@/features/auth/actions"
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message"
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -16,13 +15,13 @@ import {
 import { Input } from "@/components/ui/input"
 import { fieldError } from "@/lib/actions/result"
 
-type LoginFormProps = {
-  /** Sanitised same-origin path to return to after sign-in. */
+type SignUpFormProps = {
+  /** Sanitised same-origin path to open once the account is ready. */
   next?: string
 }
 
-export const LoginForm = ({ next }: LoginFormProps) => {
-  const [state, formAction] = useActionState(signIn, undefined)
+export const SignUpForm = ({ next }: SignUpFormProps) => {
+  const [state, formAction] = useActionState(signUp, undefined)
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -41,26 +40,30 @@ export const LoginForm = ({ next }: LoginFormProps) => {
           <FieldError>{fieldError(state, "email")}</FieldError>
         </Field>
         <Field>
-          <div className="flex items-center justify-between gap-2">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <Link
-              href={ROUTES.forgotPassword}
-              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
+          <FieldLabel htmlFor="password">Password</FieldLabel>
           <Input
             id="password"
             name="password"
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
           />
+          <FieldDescription>At least 8 characters.</FieldDescription>
           <FieldError>{fieldError(state, "password")}</FieldError>
         </Field>
+        <Field>
+          <FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel>
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type="password"
+            autoComplete="new-password"
+            required
+          />
+          <FieldError>{fieldError(state, "confirmPassword")}</FieldError>
+        </Field>
         <AuthFormMessage state={state} />
-        <AuthSubmitButton>Sign in</AuthSubmitButton>
+        <AuthSubmitButton>Create account</AuthSubmitButton>
       </FieldGroup>
     </form>
   )

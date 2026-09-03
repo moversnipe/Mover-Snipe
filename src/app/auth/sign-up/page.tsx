@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { DEFAULT_AUTHENTICATED_PATH, ROUTES } from "@/config/routes"
-import { LoginForm } from "@/features/auth/components/login-form"
+import { SignUpForm } from "@/features/auth/components/sign-up-form"
 import { sanitizeNextPath } from "@/features/auth/redirect"
 import {
   Card,
@@ -13,37 +13,37 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export const metadata: Metadata = { title: "Sign in" }
+export const metadata: Metadata = { title: "Create account" }
 
-type LoginPageProps = {
+type SignUpPageProps = {
   searchParams: Promise<{ next?: string }>
 }
 
 // Signed-in users never reach this page: src/proxy.ts redirects them.
-const LoginPage = async ({ searchParams }: LoginPageProps) => {
+const SignUpPage = async ({ searchParams }: SignUpPageProps) => {
   const { next } = await searchParams
   const safeNext = sanitizeNextPath(next, DEFAULT_AUTHENTICATED_PATH)
-  const signUpHref = `${ROUTES.signUp}?next=${encodeURIComponent(safeNext)}`
+  const loginHref = `${ROUTES.login}?next=${encodeURIComponent(safeNext)}`
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Sign in</CardTitle>
+        <CardTitle>Create your account</CardTitle>
         <CardDescription>
-          Enter your email and password to continue.
+          Use your email and pick a password to get started.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <LoginForm next={safeNext} />
+        <SignUpForm next={safeNext} />
       </CardContent>
       <CardFooter>
         <p className="text-sm text-muted-foreground">
-          No account yet?{" "}
+          Already have an account?{" "}
           <Link
-            href={signUpHref}
+            href={loginHref}
             className="text-foreground underline underline-offset-4"
           >
-            Create one
+            Sign in
           </Link>
         </p>
       </CardFooter>
@@ -51,4 +51,4 @@ const LoginPage = async ({ searchParams }: LoginPageProps) => {
   )
 }
 
-export default LoginPage
+export default SignUpPage
