@@ -20,6 +20,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 type AppSidebarProps = {
   /** Signed-in account shown in the footer card. */
@@ -30,6 +31,16 @@ type AppSidebarProps = {
   }
 }
 
+/**
+ * Centres the fixed-size buttons once the sidebar collapses.
+ *
+ * The `inset` container reserves `--sidebar-width-icon` plus 18px, but only 16
+ * of that is its own padding: the spare 2px exists for the `floating` variant's
+ * ring, which `inset` never draws. That leaves a 34px track around a 32px
+ * button, and flex parks it at the start, so every icon sits 2px left of centre.
+ */
+const COLLAPSED_CENTERING = "group-data-[collapsible=icon]:items-center"
+
 export const AppSidebar = ({ user }: AppSidebarProps) => {
   const pathname = usePathname()
 
@@ -39,7 +50,7 @@ export const AppSidebar = ({ user }: AppSidebarProps) => {
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
-        <SidebarMenu>
+        <SidebarMenu className={COLLAPSED_CENTERING}>
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
@@ -58,8 +69,14 @@ export const AppSidebar = ({ user }: AppSidebarProps) => {
         The `base-nova` sidebar ships `gap-0` on both the content column and
         each menu, so groups and entries sit flush against one another. These
         overrides restore the spacing without hand-editing the vendored file.
+
+        Collapsed to icon width the group labels shrink to nothing, so the
+        breathing room between groups would strand icons far apart while their
+        neighbours inside a group stay 4px away. Fall back to that same 4px so
+        every icon is evenly spaced, and transition the gap rather than
+        snapping it, to match the 200ms the sidebar itself animates over.
       */}
-      <SidebarContent className="gap-2">
+      <SidebarContent className="gap-2 transition-[gap] duration-200 ease-linear group-data-[collapsible=icon]:gap-1">
         {/*
           The vendored sidebar renders plain `div`/`ul` elements, so the app
           would otherwise have no navigation landmark. `contents` keeps this
@@ -67,12 +84,15 @@ export const AppSidebar = ({ user }: AppSidebarProps) => {
         */}
         <nav aria-label="Main" className="contents">
           {NAV_SECTIONS.map((section) => (
-            <SidebarGroup key={section.label ?? "overview"}>
+            <SidebarGroup
+              key={section.label ?? "overview"}
+              className="transition-[padding] duration-200 ease-linear group-data-[collapsible=icon]:py-0"
+            >
               {section.label ? (
                 <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
               ) : null}
               <SidebarGroupContent>
-                <SidebarMenu className="gap-1">
+                <SidebarMenu className={cn("gap-1", COLLAPSED_CENTERING)}>
                   {section.items.map((item) => {
                     const isActive = isNavItemActive(pathname, item.href)
 
