@@ -121,8 +121,8 @@ src/
 - TypeScript strict. No `any`, no non-null `!` except immediately after a check, no `as` casts to silence errors. Index access is `T | undefined` (`noUncheckedIndexedAccess`): handle it.
 - Imports, in groups separated by blank lines: `react`/`next`, third-party, `@/config`, `@/features`, `@/components`, `@/lib`, relative. Always use the `@/` alias; never barrel files.
 - `cn()` from `src/lib/utils.ts` for conditional classes. Design tokens from `globals.css`, no hex literals.
-- Logging only via `logger` from `src/lib/logger.ts`; `console.*` is allowed only in `error.tsx` boundaries, tests, and hooks.
-- `process.env` is read only in `src/lib/env/`.
+- Logging only via `logger` from `src/lib/logger.ts`; `console.*` is allowed only inside `logger.ts` itself (its output sink), `error.tsx` boundaries, tests, and hooks.
+- `process.env` is read only in `src/lib/env/`. Test bootstrapping is the one exception: `src/test/setup.ts` seeds public placeholders before `clientEnv` loads, and `supabase/migrations.test.ts` / `supabase/functions.test.ts` read a directory override so they can check themselves. Never in app code.
 - Prettier formats on save and in the PostToolUse hook; do not fight it.
 
 ## Server vs Client, data fetching
@@ -206,10 +206,11 @@ variables in `.env.example` and ask the user to set them.
 
 ## Claude Code setup in this repo
 
-- **`.claude/settings.json`** — allowlist for the npm/npx/git commands above; denies reading `.env*` secrets, remote Supabase pushes/resets, force pushes.
+- **`.claude/settings.json`** — allowlist for the npm/npx/git commands above; denies reading the secret env files by name (`.env`, `.env.local`, `.env.<stage>`, `.env.*.local`) plus `*.pem`/`*.key`, and denies remote Supabase pushes/resets and force pushes. The deny list is an enumeration, not a glob, so that `.env.example` stays readable.
 - Hooks are **guardrails, not a sandbox**: they catch the mistakes an agent is likely to make and fail closed when they cannot parse their input, but a shell blocklist cannot enumerate every way to read a file. The real controls are that secrets are never committed (`.gitignore`), the Read-tool deny rules, RLS, and human review of the diff.
-- **Hooks** (`.claude/hooks/`, all invoked by `settings.json`):
-  - `session-start.sh` — installs deps if `node_modules` is missing, warns if `.env.local` is absent.
+- **Hooks** (`.claude/hooks/`, wired to events in `settings.json`):
+  - `_json.sh` — not wired to an event; sourced by the others to read one field out of the hook's JSON stdin. Returns a sentinel when `node` is missing or the payload will not parse, so callers fail closed.
+  - `session-start.sh` — installs deps if `node_modules` is missing, warns if the local env file is absent.
   - `protect-files.sh` (PreToolUse Edit/Write) — blocks edits to `.env*` secrets, `package-lock.json`, and migrations already on `origin/main` (or `HEAD` if that ref is missing).
   - `guard-bash.sh` (PreToolUse Bash) — blocks remote Supabase ops, force pushes, deleting migrations, reading secret env files.
   - `check-file.sh` (PostToolUse Edit/Write) — Prettier-formats the file and fails the tool call on ESLint errors.
@@ -223,7 +224,8 @@ variables in `.env.example` and ask the user to set them.
 ## Never
 
 `any` · `asChild` · Radix imports · SWR · `postgres_changes` · `select("*")` ·
-inline route strings · `process.env` outside `src/lib/env/` · `console.*` in app
-code · editing `src/components/ui/` by hand (except commented fixes) · editing a
-committed migration · writing to Stripe mirror tables outside the webhook ·
-documenting behaviour that does not exist.
+inline route strings · `process.env` outside `src/lib/env/` and the test
+bootstrap · `console.*` in app code (outside `logger.ts`) · editing
+`src/components/ui/` by hand (except commented fixes) · editing a committed
+migration · writing to Stripe mirror tables outside the webhook · documenting
+behaviour that does not exist.
