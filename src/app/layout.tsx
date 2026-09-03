@@ -25,20 +25,16 @@ export const metadata: Metadata = {
   description: siteConfig.description,
 }
 
+// The font variables live on <html>, not <body>: globals.css applies
+// `font-sans` to the html element, so the variables have to be defined there
+// or the declaration cannot resolve and the browser default font wins.
 const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => (
-  <html lang="en" suppressHydrationWarning>
-    {/*
-      `font-sans` has to sit on the same element as the font classes. Those
-      classes are what declare `--font-geist-sans`, and a custom property is
-      only visible to the declaring element and its descendants — applying
-      `font-sans` to <html> resolved `var(--font-geist-sans)` against an
-      undefined value, which silently dropped the whole declaration and left
-      the app in the browser's default face. Body also covers portalled UI,
-      which React mounts as a sibling of this tree under <body>.
-    */}
-    <body
-      className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
-    >
+  <html
+    lang="en"
+    className={`${geistSans.variable} ${geistMono.variable}`}
+    suppressHydrationWarning
+  >
+    <body className="antialiased">
       <Providers>{children}</Providers>
     </body>
   </html>

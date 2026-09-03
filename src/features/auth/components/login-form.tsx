@@ -6,9 +6,11 @@ import Link from "next/link"
 import { ROUTES } from "@/config/routes"
 import { signIn } from "@/features/auth/actions"
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message"
+import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -23,31 +25,38 @@ type LoginFormProps = {
 
 export const LoginForm = ({ next }: LoginFormProps) => {
   const [state, formAction] = useActionState(signIn, undefined)
+  const signUpHref = next
+    ? `${ROUTES.signUp}?next=${encodeURIComponent(next)}`
+    : ROUTES.signUp
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
       {next ? <input type="hidden" name="next" value={next} /> : null}
       <FieldGroup>
+        <AuthPageHeader
+          title="Login to your account"
+          description="Enter your email below to login to your account"
+        />
         <Field>
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
             id="email"
             name="email"
             type="email"
+            placeholder="m@example.com"
             autoComplete="email"
-            placeholder="you@example.com"
             required
           />
           <FieldError>{fieldError(state, "email")}</FieldError>
         </Field>
         <Field>
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center">
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <Link
               href={ROUTES.forgotPassword}
-              className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="ml-auto text-sm underline-offset-4 hover:underline"
             >
-              Forgot password?
+              Forgot your password?
             </Link>
           </div>
           <Input
@@ -60,7 +69,15 @@ export const LoginForm = ({ next }: LoginFormProps) => {
           <FieldError>{fieldError(state, "password")}</FieldError>
         </Field>
         <AuthFormMessage state={state} />
-        <AuthSubmitButton>Sign in</AuthSubmitButton>
+        <Field>
+          <AuthSubmitButton>Login</AuthSubmitButton>
+          <FieldDescription className="text-center">
+            Don&apos;t have an account?{" "}
+            <Link href={signUpHref} className="underline underline-offset-4">
+              Sign up
+            </Link>
+          </FieldDescription>
+        </Field>
       </FieldGroup>
     </form>
   )

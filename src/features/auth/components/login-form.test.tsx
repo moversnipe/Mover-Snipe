@@ -12,16 +12,35 @@ vi.mock("@/features/auth/actions", () => ({
 describe("LoginForm", () => {
   it("labels the credential inputs", () => {
     render(<LoginForm />)
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Login to your account" })
+    ).toBeInTheDocument()
     expect(screen.getByLabelText("Email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Login" })).toBeEnabled()
   })
 
   it("links to the password reset page", () => {
     render(<LoginForm />)
     expect(
-      screen.getByRole("link", { name: "Forgot password?" })
+      screen.getByRole("link", { name: "Forgot your password?" })
     ).toHaveAttribute("href", ROUTES.forgotPassword)
+  })
+
+  it("links to sign-up, carrying the return path along", () => {
+    render(<LoginForm next={ROUTES.billing} />)
+    expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute(
+      "href",
+      `${ROUTES.signUp}?next=${encodeURIComponent(ROUTES.billing)}`
+    )
+  })
+
+  it("links to plain sign-up when there is nowhere to return to", () => {
+    render(<LoginForm />)
+    expect(screen.getByRole("link", { name: "Sign up" })).toHaveAttribute(
+      "href",
+      ROUTES.signUp
+    )
   })
 
   it("carries the return path through as a hidden field", () => {

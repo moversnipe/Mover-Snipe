@@ -30,7 +30,7 @@ AI-assisted changes follow the same conventions as human ones.
 - The signed-in account sits at the foot of the sidebar — avatar, name, email — and its menu owns the theme choice and sign-out. Collapsed to icon width it shows the avatar alone.
 - The active entry is derived from the current path, so a nested page such as `/listings/<id>` keeps Listings selected, and the header breadcrumb names the section and page.
 - Open/collapsed state persists in the `sidebar_state` cookie and is read back in `(app)/layout.tsx`, so the first server render matches what the user last chose. Toggle with the header button or `Ctrl`/`Cmd` + `B`. The vendored `SidebarRail` is deliberately left out: it dresses the sidebar edge with a hover highlight and a `cursor-w-resize`, which promises a drag it does not implement — it only toggles on click.
-- Geist and Geist Mono via `next/font`, applied on `<body>` alongside the classes that declare their custom properties (`font-sans` on `<html>` cannot see them, so the face silently fell back).
+- Geist and Geist Mono via `next/font`, with the variable classes on `<html>` — the element `globals.css` applies `font-sans` to. A custom property is only visible to the declaring element and its descendants, so declaring them lower down leaves that `var()` undefined and silently drops the face.
 
 **Foundation**
 
@@ -200,7 +200,7 @@ All variables are required (see `.env.example`):
 2. In the Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to your domain and add `https://<your-domain>/auth/callback` to **Redirect URLs**. The default email templates route through that callback; nothing else needs to be allow-listed.
 3. Still under Authentication, harden the settings the local `config.toml` cannot set for you — each one closes a gap the app cannot close on its own:
    - **Confirm email: on.** With it off, sign-up answers differently for a registered address than for a new one, which lets anyone enumerate your users. On, both outcomes land on `/auth/sign-up-success`.
-   - **Minimum password length: 8**, matching `passwordSchema` in `src/features/auth/schemas.ts`. The Auth API is public, so the Zod check alone does not bind it.
+   - **Minimum password length: 8** and **Password requirements: lowercase, uppercase letters, digits and symbols**, matching `PASSWORD_RULES` in `src/features/auth/schemas.ts` (the sign-up and update-password forms show the same list live as the user types). The Auth API is public, so the Zod check alone does not bind it.
    - **Secure password change: on**, so a session that is no longer fresh cannot set a new password without reauthenticating. The recovery-link flow is unaffected: that session is new.
    - **Enable CAPTCHA** and review the email rate limits before configuring custom SMTP. `/auth/forgot-password` is public, and the default per-address throttle is one send per second.
 4. Settings → API Keys → **Publishable and secret API keys**: create the keys (they are named `default`). Use them for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`; do not ship the legacy `anon`/`service_role` JWTs. Each variable takes a single key's value — Edge Functions separately receive all of them as the `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS` JSON objects.

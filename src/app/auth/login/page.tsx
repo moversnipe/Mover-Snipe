@@ -1,19 +1,10 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 
-import { DEFAULT_AUTHENTICATED_PATH, ROUTES } from "@/config/routes"
+import { DEFAULT_AUTHENTICATED_PATH } from "@/config/routes"
 import { LoginForm } from "@/features/auth/components/login-form"
 import { sanitizeNextPath } from "@/features/auth/redirect"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 
-export const metadata: Metadata = { title: "Sign in" }
+export const metadata: Metadata = { title: "Login" }
 
 type LoginPageProps = {
   searchParams: Promise<{ next?: string }>
@@ -23,32 +14,8 @@ type LoginPageProps = {
 const LoginPage = async ({ searchParams }: LoginPageProps) => {
   const { next } = await searchParams
   const safeNext = sanitizeNextPath(next, DEFAULT_AUTHENTICATED_PATH)
-  const signUpHref = `${ROUTES.signUp}?next=${encodeURIComponent(safeNext)}`
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Sign in</CardTitle>
-        <CardDescription>
-          Enter your email and password to continue.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <LoginForm next={safeNext} />
-      </CardContent>
-      <CardFooter>
-        <p className="text-sm text-muted-foreground">
-          No account yet?{" "}
-          <Link
-            href={signUpHref}
-            className="text-foreground underline underline-offset-4"
-          >
-            Create one
-          </Link>
-        </p>
-      </CardFooter>
-    </Card>
-  )
+  return <LoginForm next={safeNext} />
 }
 
 export default LoginPage
