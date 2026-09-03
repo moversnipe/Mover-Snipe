@@ -1,12 +1,12 @@
-# Next.js + Supabase + Stripe Boilerplate
+# Mover Snipe
 
-A production-shaped starter for paid web apps: **Next.js 16** (App Router,
-React 19, TypeScript 6), **Supabase** (Postgres with row-level security, Auth),
-**Stripe** (Checkout, Customer Portal, webhook-synced subscriptions), and
-**shadcn/ui on Base UI** with Tailwind CSS 4. Ships with a modular repo layout,
-typed environment validation, a Server Action result contract, structured
-errors, tests, CI, and a complete Claude Code setup (rules, hooks, agents,
-commands) so AI-assisted changes follow the same conventions as human ones.
+Built on **Next.js 16** (App Router, React 19, TypeScript 6), **Supabase**
+(Postgres with row-level security, Auth), **Stripe** (Checkout, Customer
+Portal, webhook-synced subscriptions), and **shadcn/ui on Base UI** with
+Tailwind CSS 4. Ships with a modular repo layout, typed environment
+validation, a Server Action result contract, structured errors, tests, CI,
+and a complete Claude Code setup (rules, hooks, agents, commands) so
+AI-assisted changes follow the same conventions as human ones.
 
 ## What is included
 

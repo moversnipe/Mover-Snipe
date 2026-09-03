@@ -26,12 +26,10 @@ const HomePage = async () => {
 
       <section className="flex flex-1 flex-col justify-center gap-6 py-16">
         <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          Ship a paid product on Next.js, Supabase, and Stripe.
+          Welcome to {siteConfig.name}.
         </h1>
         <p className="max-w-prose text-lg text-pretty text-muted-foreground">
-          Auth, Postgres with row-level security, subscriptions synced by
-          webhook, and a shadcn/ui component set on Base UI. Delete this page
-          and start building.
+          Sign in to your account, or view our plans to get started.
         </p>
         <div className="flex flex-wrap gap-3">
           {user ? (
