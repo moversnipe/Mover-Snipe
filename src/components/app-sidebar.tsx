@@ -41,7 +41,12 @@ export const AppSidebar = () => {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      {/*
+        The `base-nova` sidebar ships `gap-0` on both the content column and
+        each menu, so groups and entries sit flush against one another. These
+        overrides restore the spacing without hand-editing the vendored file.
+      */}
+      <SidebarContent className="gap-2">
         {/*
           The vendored sidebar renders plain `div`/`ul` elements, so the app
           would otherwise have no navigation landmark. `contents` keeps this
@@ -54,7 +59,7 @@ export const AppSidebar = () => {
                 <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
               ) : null}
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-1">
                   {section.items.map((item) => {
                     const isActive = isNavItemActive(pathname, item.href)
 
