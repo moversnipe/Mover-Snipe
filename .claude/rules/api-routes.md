@@ -61,9 +61,19 @@ Three files, one per layer:
 
 1. `src/lib/<provider>/webhooks.ts` — `verify<Provider>Webhook(request)`: reads the raw body, verifies the signature, returns the typed event, throws `AppError(VALIDATION)` on failure. Reads secrets only from `serverEnv`.
 2. `src/features/<domain>/webhook-handlers.ts` — `HANDLED_EVENT_TYPES` and `handle<Provider>Event(event)`. Owns all database writes for that integration. Uses the admin client with a comment explaining why.
-3. `src/app/api/webhooks/<provider>/route.ts` — `export const runtime = "nodejs"`, `createHandler`, verify → skip unhandled types with `{ received: true, handled: false }` → dispatch → `apiError(INTERNAL)` on failure so the provider retries.
+3. `src/app/api/webhooks/<provider>/route.ts` — `export const runtime = "nodejs"`, `createHandler`, verify → skip unhandled types with `{ received: true, handled: false }` → `runOnce(webhookEventStore, { provider, eventId, eventType }, () => handle<Provider>Event(event))` → `apiError(INTERNAL)` on failure so the provider retries.
 
 Nothing is written to the database before verification succeeds.
+
+**Idempotency is mandatory.** Every webhook handler runs inside `runOnce` from
+`src/lib/api/idempotency.ts`, backed by `public.webhook_events` through
+`src/lib/api/webhook-event-store.ts`. The ledger is keyed by
+`(provider, event_id)`: replays and concurrent duplicates are skipped with
+`outcome: "duplicate"`, a failing handler marks the row `failed` and rethrows
+so the provider retries, and a claim abandoned by a crashed worker becomes
+claimable again after five minutes. Use the provider's own event id, never a
+hash of the payload. The structure test requires `runOnce` in every webhook
+route.
 
 ## Redirect callbacks
 

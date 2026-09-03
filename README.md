@@ -20,6 +20,7 @@ commands) so AI-assisted changes follow the same conventions as human ones.
 **Billing**
 
 - `products`, `prices`, `subscriptions`, `customers` tables mirrored from Stripe by the webhook at `/api/webhooks/stripe`.
+- `webhook_events` idempotency ledger: every webhook (Stripe or a future provider) is processed at most once per event id; replays, concurrent deliveries, and retries after failure are handled by an atomic claim function.
 - `/billing`: pricing table from the database, Stripe Checkout, Customer Portal.
 - `/dashboard`: profile and current subscription.
 
@@ -128,14 +129,14 @@ src/
 ├── lib/
 │   ├── env/                    client.ts · server.ts
 │   ├── actions/result.ts       ActionResult contract
-│   ├── api/                    handler · validate · response
+│   ├── api/                    handler · validate · response · idempotency · webhook-event-store
 │   ├── supabase/               client · server · admin · session · database.types
 │   ├── stripe/                 server · webhooks
 │   ├── errors.ts · logger.ts · utils.ts
 ├── hooks/                      use-mobile.ts
 ├── test/                       Vitest setup
 └── proxy.ts                    Session refresh + route protection
-supabase/migrations/            SQL migrations (profiles, billing)
+supabase/migrations/            SQL migrations (profiles, billing, webhook_events)
 .claude/                        Claude Code rules, hooks, agents, commands, skills
 .github/                        CI workflow, Dependabot
 ```

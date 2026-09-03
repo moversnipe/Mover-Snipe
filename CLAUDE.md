@@ -59,7 +59,7 @@ src/
     env/                 Zod-validated clientEnv / serverEnv (only place that reads process.env)
     errors.ts            ErrorCode, AppError, HTTP status map
     actions/result.ts    ActionResult contract for Server Actions
-    api/                 handler.ts (createHandler), validate.ts, response.ts (apiSuccess / apiError)
+    api/                 handler.ts (createHandler), validate.ts, response.ts, idempotency.ts + webhook-event-store.ts (runOnce ledger)
     logger.ts            Structured JSON logger
     supabase/            client.ts, server.ts, admin.ts, session.ts, database.types.ts
     stripe/              server.ts (SDK instance), webhooks.ts (signature verification)
@@ -156,6 +156,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 
 - The webhook is the only writer of `products`, `prices`, `subscriptions` (and `customers` together with `getOrCreateStripeCustomerId`).
 - `startCheckout` re-validates the price id against the database before creating a session.
+- Every webhook handler runs inside `runOnce` (ledger table `webhook_events`), so replays and concurrent deliveries are safe for any provider.
 - Period fields come from `subscription.items.data[0]`; Stripe enums are parsed with `features/billing/enums.ts`.
 
 ## UI (summary; full rules in `.claude/rules/ui-components.md`)

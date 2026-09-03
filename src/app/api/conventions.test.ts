@@ -105,6 +105,8 @@ describe("webhook routes (src/app/api/webhooks/<provider>)", () => {
       expect(source).toMatch(/from "@\/lib\/[a-z0-9-]+\/webhooks"/)
       expect(source).toMatch(/from "@\/features\/[a-z0-9-]+\/webhook-handlers"/)
       expect(source).toMatch(/export const runtime = "nodejs"/)
+      expect(source).toMatch(/from "@\/lib\/api\/idempotency"/)
+      expect(source).toMatch(/runOnce\(/)
     }
   )
 })

@@ -28,4 +28,5 @@ requirements.
 - Admin: `createAdminClient()` from `admin.ts` only for rows that intentionally have no client policy, and only in server code that is not reachable with user-controlled ids.
 - Always select explicit columns; never `select("*")`.
 - Treat Supabase `error` as fatal in queries (throw) and as a failed `ActionResult` in actions.
+- `public.webhook_events` is written only through `src/lib/api/webhook-event-store.ts`; `public.claim_webhook_event` is executable by `service_role` only.
 - Realtime: prefer private `broadcast` channels; do not add `postgres_changes` listeners.

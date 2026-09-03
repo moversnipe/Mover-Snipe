@@ -22,7 +22,7 @@ Check, for each new or altered table:
 - Functions set `search_path = ''` and are `security invoker` unless justified in a comment.
 - Migration filename matches `YYYYMMDDHHmmss_description.sql` and no previously committed migration was modified (`git diff HEAD --stat -- supabase/migrations`).
 - `database.types.ts` reflects every column, nullability, default (`?` in Insert), enum value, and foreign key in the migrations. List each mismatch precisely.
-- Any code that writes to a table only the webhook should write (`products`, `prices`, `subscriptions`, `customers`).
+- Any code that writes to a table only the webhook should write (`products`, `prices`, `subscriptions`, `customers`), or to `webhook_events` outside `src/lib/api/webhook-event-store.ts`. New functions callable by `service_role` only must `revoke execute ... from public, anon, authenticated`.
 
 Report as `file:line — problem — fix`. State explicitly when a check passed
 so the caller knows it was performed.

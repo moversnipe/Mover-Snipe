@@ -15,7 +15,7 @@ Checklist:
 3. **Admin client**: every `createAdminClient()` call site is server-only, unreachable with user-controlled identifiers except through verified lookups, and commented.
 4. **Route protection**: new routes are listed in `src/config/routes.ts`; anything added to `PUBLIC_PATHS` is justified. `(app)/layout.tsx` still calls `requireUser()`.
 5. **Redirects**: every redirect built from user input goes through `sanitizeNextPath`.
-6. **Webhooks**: signature verified on the raw body before parsing; failures return non-2xx; no writes happen before verification.
+6. **Webhooks**: signature verified on the raw body before parsing; failures return non-2xx; no writes happen before verification; dispatch is wrapped in `runOnce` (idempotency ledger) and keyed by the provider event id.
 7. **RLS**: any new table has policies or an explicit "no client access" comment; no `select("*")`.
 8. **Error exposure**: error boundaries and `ActionResult`s never surface raw `Error.message` from unknown errors (`toUserMessage`).
 9. **Dependencies**: `npm audit --omit=dev --audit-level=high` for new packages.

@@ -213,12 +213,51 @@ export type Database = {
           },
         ]
       }
+      webhook_events: {
+        Row: {
+          attempts: number
+          error: string | null
+          event_id: string
+          event_type: string
+          processed_at: string | null
+          provider: string
+          received_at: string
+          status: Database["public"]["Enums"]["webhook_event_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          error?: string | null
+          event_id: string
+          event_type: string
+          processed_at?: string | null
+          provider: string
+          received_at?: string
+          status?: Database["public"]["Enums"]["webhook_event_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          error?: string | null
+          event_id?: string
+          event_type?: string
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+          status?: Database["public"]["Enums"]["webhook_event_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_webhook_event: {
+        Args: { p_event_id: string; p_event_type: string; p_provider: string }
+        Returns: boolean
+      }
     }
     Enums: {
       pricing_plan_interval: "day" | "week" | "month" | "year"
@@ -232,6 +271,7 @@ export type Database = {
         | "past_due"
         | "unpaid"
         | "paused"
+      webhook_event_status: "processing" | "processed" | "failed"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -17,6 +17,8 @@ subscriptions, or any product concept, it belongs in `src/features/`.
 | `lib/actions/result.ts`                  | `ActionResult` and helpers used by every Server Action.                                                                       |
 | `lib/api/handler.ts`                     | `createHandler` wrapper for every JSON API route: params, `AppError` → envelope, unknown → logged 500.                        |
 | `lib/api/validate.ts`                    | `parseJsonBody` / `parseSearchParams`; throw `AppError(VALIDATION)`.                                                          |
+| `lib/api/idempotency.ts`                 | `runOnce(store, key, handler)` and the `WebhookEventStore` interface: at-most-once processing per `(provider, eventId)`.      |
+| `lib/api/webhook-event-store.ts`         | Supabase implementation over `public.webhook_events` (admin client, `claim_webhook_event` RPC).                               |
 | `lib/api/response.ts`                    | `apiSuccess`/`apiError` used by every Route Handler.                                                                          |
 | `lib/logger.ts`                          | Structured JSON logger. The only allowed logging API outside tests.                                                           |
 | `lib/supabase/client.ts`                 | Browser client (Client Components).                                                                                           |
