@@ -3,7 +3,7 @@
 import { EllipsisVertical, LogOut } from "lucide-react"
 
 import { signOut } from "@/features/auth/actions"
-import { isRenderableAvatar } from "@/features/auth/avatar"
+import { initialsOf, isRenderableAvatar } from "@/features/auth/avatar"
 import { ThemeMenuItems } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -25,19 +25,7 @@ type NavUserProps = {
   name: string
   email: string
   /** Remote avatar. Untrusted — see `isRenderableAvatar`. */
-  avatarUrl: string | null
-}
-
-/** Up to two initials for the avatar fallback: "Ada Lovelace" -> "AL". */
-const initialsOf = (name: string): string => {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part.slice(0, 1).toUpperCase())
-    .join("")
-
-  return initials || "?"
+  avatarUrl?: string | null
 }
 
 /**
@@ -60,7 +48,7 @@ export const NavUser = ({ name, email, avatarUrl }: NavUserProps) => {
               />
             }
           >
-            <Avatar className="size-8 rounded-lg after:rounded-lg">
+            <Avatar className="rounded-lg after:rounded-lg">
               {isRenderableAvatar(avatarUrl) ? (
                 <AvatarImage className="rounded-lg" src={avatarUrl} alt="" />
               ) : null}
@@ -68,27 +56,27 @@ export const NavUser = ({ name, email, avatarUrl }: NavUserProps) => {
                 {initialsOf(name)}
               </AvatarFallback>
             </Avatar>
-            <div className="grid flex-1 text-left leading-tight">
+            <div className="grid flex-1 leading-tight">
               <span className="truncate text-sm font-medium">{name}</span>
               <span className="truncate text-xs text-muted-foreground">
                 {email}
               </span>
             </div>
-            <EllipsisVertical className="ml-auto" aria-hidden="true" />
+            <EllipsisVertical aria-hidden="true" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="min-w-56 rounded-lg"
+            className="min-w-56"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
           >
             <ThemeMenuItems />
             <DropdownMenuSeparator />
             {/*
-              `nativeButton` stops Base UI emulating button behaviour over the
-              div it renders by default, which would swallow the click before
-              the form submitted. Covered by a test, since nothing about the
-              rendered markup shows it is load-bearing.
+              `DropdownMenuItem` renders a div and emulates a button over it,
+              which means `preventDefault()` on Enter and Space. Over a real
+              submit button that kills keyboard sign-out (the mouse path works
+              either way, so only the keyboard test catches a regression).
+              `nativeButton` tells Base UI the element already is a button.
             */}
             <form action={signOut}>
               <DropdownMenuItem

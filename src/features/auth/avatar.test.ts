@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { isRenderableAvatar } from "@/features/auth/avatar"
+import { initialsOf, isRenderableAvatar } from "@/features/auth/avatar"
 
 describe("isRenderableAvatar", () => {
   it("allows plain https", () => {
@@ -18,5 +18,20 @@ describe("isRenderableAvatar", () => {
     ["a missing avatar", null],
   ])("rejects %s", (_label, url: string | null) => {
     expect(isRenderableAvatar(url)).toBe(false)
+  })
+})
+
+describe("initialsOf", () => {
+  it.each([
+    ["Ada Lovelace", "AL"],
+    ["ada lovelace", "AL"],
+    ["Ada", "A"],
+    ["Ada Byron King Lovelace", "AB"],
+    ["  Ada   Lovelace  ", "AL"],
+    ["ada@example.com", "A"],
+    ["", "?"],
+    ["   ", "?"],
+  ])("turns %o into %o", (name, expected) => {
+    expect(initialsOf(name)).toBe(expected)
   })
 })

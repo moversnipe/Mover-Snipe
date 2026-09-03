@@ -11,17 +11,11 @@ vi.mock("next/navigation", () => ({
   usePathname: () => pathname(),
 }))
 
-const user = {
-  name: "Ada Lovelace",
-  email: "ada@example.com",
-  avatarUrl: null,
-}
-
 const renderSidebar = (currentPath: string) => {
   pathname.mockReturnValue(currentPath)
   return render(
     <SidebarProvider>
-      <AppSidebar user={user} />
+      <AppSidebar footer={<span>Account card</span>} />
     </SidebarProvider>
   )
 }
@@ -83,42 +77,18 @@ describe("AppSidebar", () => {
   })
 })
 
-describe("AppSidebar account card", () => {
-  it("shows the signed-in account at the foot of the sidebar", () => {
-    renderSidebar(ROUTES.dashboard)
-
-    expect(screen.getByText(user.name)).toBeInTheDocument()
-    expect(screen.getByText(user.email)).toBeInTheDocument()
-  })
-
-  it("puts the account details behind a menu trigger", () => {
-    renderSidebar(ROUTES.dashboard)
-
-    expect(
-      screen.getByRole("button", { name: /Ada Lovelace/ })
-    ).toHaveAttribute("aria-haspopup")
-  })
-
-  it("falls back to initials when there is no avatar", () => {
-    renderSidebar(ROUTES.dashboard)
-
-    expect(screen.getByText("AL")).toBeInTheDocument()
-  })
-})
-
 describe("AppSidebar chrome", () => {
-  it("renders in the inset style, so the content sits in a floating card", () => {
-    const { container } = renderSidebar(ROUTES.dashboard)
+  it("mounts the footer it is handed", () => {
+    renderSidebar(ROUTES.dashboard)
 
-    expect(container.querySelector('[data-slot="sidebar"]')).toHaveAttribute(
-      "data-variant",
-      "inset"
-    )
+    expect(screen.getByText("Account card")).toBeInTheDocument()
   })
 
   it("leaves out the rail, which invites a drag it does not support", () => {
-    const { container } = renderSidebar(ROUTES.dashboard)
+    renderSidebar(ROUTES.dashboard)
 
-    expect(container.querySelector('[data-slot="sidebar-rail"]')).toBeNull()
+    // By role, not slot: `SidebarRail` renders a button labelled this way, so
+    // the check still means something if shadcn renames its internals.
+    expect(screen.queryByRole("button", { name: "Toggle Sidebar" })).toBeNull()
   })
 })

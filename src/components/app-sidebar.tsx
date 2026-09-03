@@ -7,7 +7,6 @@ import { Crosshair } from "lucide-react"
 import { NAV_SECTIONS, isNavItemActive } from "@/config/navigation"
 import { ROUTES } from "@/config/routes"
 import { siteConfig } from "@/config/site"
-import { NavUser } from "@/features/auth/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -22,20 +21,20 @@ import {
 } from "@/components/ui/sidebar"
 
 type AppSidebarProps = {
-  /** Signed-in account shown in the footer card. */
-  user: {
-    name: string
-    email: string
-    avatarUrl: string | null
-  }
+  /**
+   * Pinned to the bottom of the rail. Passed in rather than imported so this
+   * stays domain-free: the account card belongs to the auth feature.
+   */
+  footer: React.ReactNode
 }
 
-export const AppSidebar = ({ user }: AppSidebarProps) => {
+export const AppSidebar = ({ footer }: AppSidebarProps) => {
   const pathname = usePathname()
 
-  // `inset` drops the sidebar's own panel background and turns the paired
-  // `SidebarInset` into a rounded, floating content card. The wrapper picks up
-  // the sidebar colour as the page background via `has-data-[variant=inset]`.
+  // `inset` paints the page wrapper in the sidebar colour via
+  // `has-data-[variant=inset]`, so the rail reads as part of the background
+  // rather than a panel against it, and the paired `SidebarInset` becomes a
+  // rounded content card floating on top.
   return (
     <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
@@ -101,9 +100,7 @@ export const AppSidebar = ({ user }: AppSidebarProps) => {
         </nav>
       </SidebarContent>
 
-      <SidebarFooter>
-        <NavUser {...user} />
-      </SidebarFooter>
+      <SidebarFooter>{footer}</SidebarFooter>
     </Sidebar>
   )
 }

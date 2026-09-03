@@ -1,14 +1,18 @@
 /**
  * Whether a stored avatar URL is safe to put in `<img src>`.
  *
- * `handle_new_user` seeds `profiles.avatar_url` from `raw_user_meta_data`,
- * which the signup call supplies, so the value is user-controlled even though
- * our own `signUp` never sets it. RLS keeps a row to its owner and an `img`
- * src runs no script, so the exposure is narrow, but an arbitrary URL still
- * makes the viewer's browser fetch a third party on load. Allow plain `https:`
- * only, which also rules out `data:`, `blob:` and protocol-relative values.
+ * `handle_new_user` seeds `profiles.avatar_url` from `raw_user_meta_data`, so
+ * whatever a signup call passes lands in the column. Our own `signUp` sends
+ * none, and there is no OAuth provider yet, so today the only writer is an
+ * account owner calling Supabase Auth directly with the publishable key — and
+ * RLS means they would be poisoning a row only they can read. Narrow, and a
+ * predicate is cheaper than remembering this when a provider does arrive:
+ * allow plain `https:`, which also rules out `data:`, `blob:` and
+ * protocol-relative values.
  */
-export const isRenderableAvatar = (url: string | null): url is string => {
+export const isRenderableAvatar = (
+  url: string | null | undefined
+): url is string => {
   if (!url) return false
 
   try {
@@ -16,4 +20,21 @@ export const isRenderableAvatar = (url: string | null): url is string => {
   } catch {
     return false
   }
+}
+
+/**
+ * Up to two initials for the avatar fallback: "Ada Lovelace" -> "AL".
+ *
+ * Returns "?" for a name that yields none, which the app's own fallback chain
+ * already prevents; kept so the helper stands on its own.
+ */
+export const initialsOf = (name: string): string => {
+  const initials = name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.slice(0, 1).toUpperCase())
+    .join("")
+
+  return initials || "?"
 }

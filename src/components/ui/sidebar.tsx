@@ -240,7 +240,9 @@ function Sidebar({
           // customised: the 2px past this container's own padding pays for the
           // `ring-1` that only `floating` draws on `sidebar-inner`. Charging it
           // to `inset` too left a 34px track around a 32px button, so every
-          // collapsed icon sat 2px left of centre.
+          // collapsed icon sat 1px left of centre. `sidebar-gap` never counted
+          // those 2px for either variant, so the container also overhung the
+          // column it reserves.
           variant === "floating" &&
             "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]",
           className
@@ -316,9 +318,10 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       data-slot="sidebar-inset"
       className={cn(
         // customised: `ml` flips with the sidebar's state, so without a
-        // transition the card's edge jumped 8px while the rail eased over
-        // 200ms. Matches the container's duration and curve.
-        "relative flex w-full flex-1 flex-col bg-background transition-[margin] duration-200 ease-linear md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        // transition the card's edge jumped 8px while `sidebar-gap` eased over
+        // 200ms. Scoped to the breakpoint and variant that actually move it,
+        // and to the one side that changes, rather than all margins.
+        "relative flex w-full flex-1 flex-col bg-background md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:transition-[margin-left] md:peer-data-[variant=inset]:duration-200 md:peer-data-[variant=inset]:ease-linear md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
         className
       )}
       {...props}

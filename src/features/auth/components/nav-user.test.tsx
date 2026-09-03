@@ -87,12 +87,18 @@ describe("NavUser", () => {
     expect(signOutItem.closest("form")).not.toBeNull()
   })
 
-  it("reaches the action when the menu item is clicked", async () => {
+  it("signs out from the keyboard", async () => {
     const user = await openMenu()
 
-    await user.click(await screen.findByRole("menuitem", { name: "Sign out" }))
-    // Proves `nativeButton` stops Base UI intercepting the click: without it
-    // the menu item swallows the event and the form never submits.
+    const signOutItem = await screen.findByRole("menuitem", {
+      name: "Sign out",
+    })
+    signOutItem.focus()
+    await user.keyboard("{Enter}")
+
+    // The mouse path submits with or without `nativeButton`; Base UI only
+    // calls preventDefault on Enter and Space, so this is the case that
+    // regresses if the prop goes.
     expect(signOut).toHaveBeenCalled()
   })
 })

@@ -23,10 +23,10 @@ const THEME_OPTIONS = [
  * The three theme choices as radio items, so the active one carries a tick.
  *
  * Shared by the standalone toggle below and the account menu in the sidebar
- * footer, so the two never drift apart. `theme` is undefined until next-themes
- * has read storage on mount, and Base UI reads a `value` of `undefined` as
- * "uncontrolled" rather than "nothing selected", so it needs a concrete
- * default to stay controlled.
+ * footer, so the two never drift apart. `useTheme` types `theme` as optional
+ * and Base UI locks controlled-ness on first render, so a `value` of
+ * `undefined` would leave the group uncontrolled for good; it takes a concrete
+ * default rather than the bare value.
  */
 export const ThemeMenuItems = () => {
   const { theme, setTheme } = useTheme()
@@ -34,7 +34,7 @@ export const ThemeMenuItems = () => {
   return (
     <DropdownMenuRadioGroup
       value={theme ?? "system"}
-      onValueChange={(value) => setTheme(String(value))}
+      onValueChange={(value: string) => setTheme(value)}
     >
       {/*
         Inside the group, not beside it: this maps to Base UI's `GroupLabel`,

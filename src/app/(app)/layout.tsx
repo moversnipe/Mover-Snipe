@@ -4,6 +4,7 @@ import {
   SIDEBAR_STATE_COOKIE,
   isSidebarOpenByDefault,
 } from "@/config/navigation"
+import { NavUser } from "@/features/auth/components/nav-user"
 import { getProfile, requireUser } from "@/features/auth/queries"
 import { AppBreadcrumb } from "@/components/app-breadcrumb"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -25,23 +26,20 @@ const AppLayout = async ({ children }: { children: React.ReactNode }) => {
   )
   // Needs the id from the check above, so it cannot join the batch.
   const profile = await getProfile(user.id)
-  const email = profile?.email ?? user.email ?? ""
+  // One fallback chain, on `||` rather than `??`, so a blank `full_name` (the
+  // column allows one) drops through instead of rendering an empty card.
+  const email = profile?.email || user.email || ""
+  const name = profile?.full_name?.trim() || email || "Account"
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar
-        user={{
-          name: profile?.full_name ?? email,
-          email,
-          avatarUrl: profile?.avatar_url ?? null,
-        }}
+        footer={
+          <NavUser name={name} email={email} avatarUrl={profile?.avatar_url} />
+        }
       />
       <SidebarInset>
-        {/*
-          No bottom border: with the `inset` variant the page is one rounded
-          card, and a full-width rule would cut across its top corners. Theme
-          and sign-out now live in the sidebar footer's account menu.
-        */}
+        {/* Borderless: the card's own edge already separates it from the page. */}
         <header className="flex h-16 shrink-0 items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
           <AppBreadcrumb />
