@@ -47,6 +47,53 @@ const policies: Policy[] = migrationFiles.flatMap((file) => {
   }))
 })
 
+/**
+ * Tables created across all migrations, and the tables named by a
+ * `grant`/`revoke ... on table ...` statement anywhere in the corpus. The two
+ * sets are compared below: an RLS policy only filters rows, so a table with no
+ * grant rejects every Data API request with
+ * `42501 permission denied for table <name>` before a policy is evaluated.
+ * Grants may live in a later migration than the `create table`, so this is
+ * checked across the corpus rather than per file.
+ */
+const allSql = migrationFiles.map((file) =>
+  readFileSync(path.join(migrationsDir, file), "utf8")
+)
+
+const createdTables = allSql.flatMap((sql) =>
+  Array.from(sql.matchAll(/create table\s+public\.(\w+)/g), (m) => m[1] ?? "")
+)
+
+const privilegedTables = new Set(
+  allSql
+    // Strip `--` comments so a statement preceded by one still matches below.
+    .map((sql) => sql.replace(/--[^\n]*/g, ""))
+    .flatMap((sql) => sql.split(";"))
+    .filter((statement) => /^\s*(grant|revoke)\b/i.test(statement))
+    .filter((statement) => /\bon\s+table\b/i.test(statement))
+    .flatMap((statement) =>
+      Array.from(statement.matchAll(/public\.(\w+)/g), (m) => m[1] ?? "")
+    )
+)
+
+describe("table privileges", () => {
+  it("finds the tables the migrations create", () => {
+    expect(createdTables.length).toBeGreaterThan(0)
+  })
+
+  it.each(createdTables)(
+    "public.%s is named by a grant or revoke statement",
+    (table) => {
+      expect(
+        privilegedTables.has(table),
+        `public.${table} has no grant/revoke. RLS policies do not grant table access: ` +
+          `without an explicit grant the Data API roles get "permission denied for table ${table}". ` +
+          `Grant what the policies allow, or revoke from anon/authenticated for a private table.`
+      ).toBe(true)
+    }
+  )
+})
+
 describe("migration file names", () => {
   it("follow YYYYMMDDHHmmss_description.sql", () => {
     for (const file of migrationFiles) {
