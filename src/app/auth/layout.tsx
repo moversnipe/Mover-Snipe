@@ -6,12 +6,21 @@ import { ROUTES } from "@/config/routes"
 import { siteConfig } from "@/config/site"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-// Shared frame for every page under /auth, after shadcn/ui's login-02 block:
-// the brand row and a centred form column on the left, a full-bleed image on
-// the right from `lg` up. Below `lg` the image is hidden and the form column
-// takes the full width.
+// Shared frame for every page under /auth, after shadcn/ui's login-02 block
+// mirrored: a full-bleed image on the left from `lg` up, the brand row and a
+// centred form column on the right. Below `lg` the image is hidden and the
+// form column takes the full width.
 const AuthLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="grid min-h-svh lg:grid-cols-2">
+    <div className="relative hidden bg-muted lg:block">
+      <Image
+        src="/placeholder.svg"
+        alt=""
+        fill
+        unoptimized
+        className="object-cover dark:brightness-[0.2] dark:grayscale"
+      />
+    </div>
     <div className="flex flex-col gap-4 p-6 md:p-10">
       <header className="flex items-center justify-between gap-2">
         <Link
@@ -28,15 +37,6 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => (
       <main className="flex flex-1 items-center justify-center">
         <div className="w-full max-w-xs">{children}</div>
       </main>
-    </div>
-    <div className="relative hidden bg-muted lg:block">
-      <Image
-        src="/placeholder.svg"
-        alt=""
-        fill
-        unoptimized
-        className="object-cover dark:brightness-[0.2] dark:grayscale"
-      />
     </div>
   </div>
 )
