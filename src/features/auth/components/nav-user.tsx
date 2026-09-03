@@ -54,11 +54,8 @@ const initialsOf = (name: string): string => {
 export const NavUser = ({ name, email, avatarUrl }: NavUserProps) => {
   const { isMobile } = useSidebar()
 
-  // Centred on collapse for the same reason as the nav menus: the `inset`
-  // container leaves a 34px track around the 32px button, so flex would park
-  // the avatar 2px left of centre and break the column of icons above it.
   return (
-    <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+    <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger
