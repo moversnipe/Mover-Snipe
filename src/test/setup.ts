@@ -9,6 +9,22 @@ process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??=
 import { cleanup } from "@testing-library/react"
 import { afterEach } from "vitest"
 
+// jsdom ships no `matchMedia`, so any component reading responsive state
+// through `useIsMobile` would throw on render. Answer "no match" for every
+// query, which puts those components on their desktop branch.
+const createMediaQueryList = (query: string): MediaQueryList => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  addListener: () => {},
+  removeListener: () => {},
+  dispatchEvent: () => false,
+})
+
+window.matchMedia ??= createMediaQueryList
+
 afterEach(() => {
   cleanup()
 })

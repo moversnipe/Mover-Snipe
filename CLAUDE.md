@@ -58,8 +58,8 @@ src/
     auth/                Credentials/password schemas, getUser/requireUser, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms
     billing/             Products/prices/subscription queries, checkout + portal actions, webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
-  components/            App-wide, domain-free pieces (providers, theme toggle)
-  config/                routes.ts (ROUTES, public paths, anonymous-only auth paths), site.ts (name, URL, absoluteUrl)
+  components/            App-wide, domain-free pieces (app sidebar, breadcrumb, providers, theme toggle)
+  config/                routes.ts (ROUTES, public paths, anonymous-only auth paths), navigation.ts (NAV_SECTIONS, active-path helpers, sidebar cookie), site.ts (name, URL, absoluteUrl)
   lib/                   Domain-free infrastructure (see .claude/rules/lib.md)
     env/                 Zod-validated clientEnv / serverEnv (only place that reads process.env)
     errors.ts            ErrorCode, AppError, HTTP status map
@@ -78,6 +78,7 @@ src/
 | You need to…                               | Put it in                                                                                                                                                                     |
 | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Add a page                                 | `src/app/(app)/<name>/page.tsx` (protected) or `src/app/(marketing)/` (public); register in `src/config/routes.ts`                                                            |
+| Put a page in the sidebar                  | Add a `NavItem` to the right section of `NAV_SECTIONS` in `src/config/navigation.ts`                                                                                          |
 | Read data on the server                    | `src/features/<domain>/queries.ts` (`server-only`, `React.cache`, explicit columns)                                                                                           |
 | Mutate data from our UI                    | `src/features/<domain>/actions.ts` Server Action returning `ActionResult`                                                                                                     |
 | Accept calls from outside (webhook, probe) | `src/app/api/<resource>/route.ts` on `createHandler`; webhooks add `lib/<provider>/webhooks.ts` + `features/<domain>/webhook-handlers.ts` (see `.claude/rules/api-routes.md`) |
@@ -172,6 +173,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 - Add primitives with the CLI; compose in feature components; tokens from `globals.css`; light and dark must both work.
 - Accessibility is required: semantic HTML, labelled controls, keyboard access, `sr-only` text on icon buttons.
 - For new UI, load the `frontend-design` skill and stay inside its "Constraints for this repository" section.
+- Signed-in pages render inside the sidebar shell in `(app)/layout.tsx`; a page supplies its own heading and content only. Nav entries come from `NAV_SECTIONS`, never from JSX in the sidebar.
 
 ## Testing
 
