@@ -23,6 +23,14 @@ type NavUserProps = {
   /** Display name, already falling back to the email on the server. */
   name: string
   email: string
+  /**
+   * Rendered straight into `<img src>`. Safe as things stand: `profiles` is
+   * readable only by its owner under RLS, nothing in the app writes
+   * `avatar_url` yet, and an `img` src executes no script. Add an `https:`
+   * check (or route it through `next/image` with `remotePatterns`) before the
+   * first sign-in provider or profile editor starts filling it in, so a
+   * third-party URL cannot leak the viewer's IP on load.
+   */
   avatarUrl: string | null
 }
 
