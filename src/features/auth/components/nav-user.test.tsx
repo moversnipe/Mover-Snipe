@@ -6,8 +6,10 @@ import { NavUser } from "@/features/auth/components/nav-user"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
 // The action is a server module; the form only needs a callable reference.
+const signOut = vi.fn()
+
 vi.mock("@/features/auth/actions", () => ({
-  signOut: vi.fn(),
+  signOut: (...args: unknown[]) => signOut(...args),
 }))
 
 const setTheme = vi.fn()
@@ -83,5 +85,14 @@ describe("NavUser", () => {
     })
     expect(signOutItem).toHaveAttribute("type", "submit")
     expect(signOutItem.closest("form")).not.toBeNull()
+  })
+
+  it("reaches the action when the menu item is clicked", async () => {
+    const user = await openMenu()
+
+    await user.click(await screen.findByRole("menuitem", { name: "Sign out" }))
+    // Proves `nativeButton` stops Base UI intercepting the click: without it
+    // the menu item swallows the event and the form never submits.
+    expect(signOut).toHaveBeenCalled()
   })
 })
