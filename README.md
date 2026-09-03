@@ -29,7 +29,7 @@ AI-assisted changes follow the same conventions as human ones.
 - Collapsible shadcn/ui sidebar over every signed-in page in the `inset` style — no sidebar panel background, and the page content floating as one rounded card. Driven by `NAV_SECTIONS` in `src/config/navigation.ts`: Dashboard on its own, then **Pipeline** (Listings, Prospects), **Outreach** (Templates, Campaigns, Mails), and **Account** (Billing, Settings).
 - The signed-in account sits at the foot of the sidebar — avatar, name, email — and its menu owns the theme choice and sign-out. Collapsed to icon width it shows the avatar alone.
 - The active entry is derived from the current path, so a nested page such as `/listings/<id>` keeps Listings selected, and the header breadcrumb names the section and page.
-- Open/collapsed state persists in the `sidebar_state` cookie and is read back in `(app)/layout.tsx`, so the first server render matches what the user last chose. Toggle with the header button, the rail, or `Ctrl`/`Cmd` + `B`.
+- Open/collapsed state persists in the `sidebar_state` cookie and is read back in `(app)/layout.tsx`, so the first server render matches what the user last chose. Toggle with the header button or `Ctrl`/`Cmd` + `B`. The vendored `SidebarRail` is deliberately left out: it dresses the sidebar edge with a hover highlight and a `cursor-w-resize`, which promises a drag it does not implement — it only toggles on click.
 - Geist and Geist Mono via `next/font`, applied on `<body>` alongside the classes that declare their custom properties (`font-sans` on `<html>` cannot see them, so the face silently fell back).
 
 **Foundation**

@@ -115,4 +115,10 @@ describe("AppSidebar chrome", () => {
       "inset"
     )
   })
+
+  it("leaves out the rail, which invites a drag it does not support", () => {
+    const { container } = renderSidebar(ROUTES.dashboard)
+
+    expect(container.querySelector('[data-slot="sidebar-rail"]')).toBeNull()
+  })
 })

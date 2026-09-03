@@ -19,7 +19,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar"
 
 type AppSidebarProps = {
@@ -101,8 +100,6 @@ export const AppSidebar = ({ user }: AppSidebarProps) => {
       <SidebarFooter>
         <NavUser {...user} />
       </SidebarFooter>
-
-      <SidebarRail />
     </Sidebar>
   )
 }
