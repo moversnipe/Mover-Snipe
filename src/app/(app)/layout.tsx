@@ -46,7 +46,8 @@ const AppLayout = async ({ children }: { children: React.ReactNode }) => {
           <SidebarTrigger className="-ml-1" />
           <AppBreadcrumb />
         </header>
-        <div className="flex flex-1 flex-col gap-8 p-6 pt-0">{children}</div>
+        {/* No top padding: the h-16 header above already spaces the content. */}
+        <div className="flex flex-1 flex-col gap-8 px-6 pb-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   )

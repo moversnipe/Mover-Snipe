@@ -24,8 +24,9 @@ const THEME_OPTIONS = [
  *
  * Shared by the standalone toggle below and the account menu in the sidebar
  * footer, so the two never drift apart. `theme` is undefined until next-themes
- * has read storage on mount; menu content only mounts once opened, so the
- * fallback is belt and braces rather than a state we expect to render.
+ * has read storage on mount, and Base UI reads a `value` of `undefined` as
+ * "uncontrolled" rather than "nothing selected", so it needs a concrete
+ * default to stay controlled.
  */
 export const ThemeMenuItems = () => {
   const { theme, setTheme } = useTheme()

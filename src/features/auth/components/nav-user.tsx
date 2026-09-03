@@ -3,6 +3,7 @@
 import { EllipsisVertical, LogOut } from "lucide-react"
 
 import { signOut } from "@/features/auth/actions"
+import { isRenderableAvatar } from "@/features/auth/avatar"
 import { ThemeMenuItems } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -23,14 +24,7 @@ type NavUserProps = {
   /** Display name, already falling back to the email on the server. */
   name: string
   email: string
-  /**
-   * Rendered straight into `<img src>`. Safe as things stand: `profiles` is
-   * readable only by its owner under RLS, nothing in the app writes
-   * `avatar_url` yet, and an `img` src executes no script. Add an `https:`
-   * check (or route it through `next/image` with `remotePatterns`) before the
-   * first sign-in provider or profile editor starts filling it in, so a
-   * third-party URL cannot leak the viewer's IP on load.
-   */
+  /** Remote avatar. Untrusted — see `isRenderableAvatar`. */
   avatarUrl: string | null
 }
 
@@ -67,7 +61,7 @@ export const NavUser = ({ name, email, avatarUrl }: NavUserProps) => {
             }
           >
             <Avatar className="size-8 rounded-lg after:rounded-lg">
-              {avatarUrl ? (
+              {isRenderableAvatar(avatarUrl) ? (
                 <AvatarImage className="rounded-lg" src={avatarUrl} alt="" />
               ) : null}
               <AvatarFallback className="rounded-lg text-xs">
@@ -93,13 +87,12 @@ export const NavUser = ({ name, email, avatarUrl }: NavUserProps) => {
             {/*
               `nativeButton` stops Base UI emulating button behaviour over the
               div it renders by default, which would swallow the click before
-              the form submitted. `closeOnClick={false}` keeps the form mounted
-              until `signOut` redirects, rather than racing the unmount.
+              the form submitted. Covered by a test, since nothing about the
+              rendered markup shows it is load-bearing.
             */}
             <form action={signOut}>
               <DropdownMenuItem
                 nativeButton
-                closeOnClick={false}
                 render={<button type="submit" className="w-full" />}
               >
                 <LogOut aria-hidden="true" />
