@@ -59,10 +59,10 @@ src/
     env/                 Zod-validated clientEnv / serverEnv (only place that reads process.env)
     errors.ts            ErrorCode, AppError, HTTP status map
     actions/result.ts    ActionResult contract for Server Actions
-    api/response.ts      apiSuccess / apiError for Route Handlers
+    api/                 handler.ts (createHandler), validate.ts, response.ts (apiSuccess / apiError)
     logger.ts            Structured JSON logger
     supabase/            client.ts, server.ts, admin.ts, session.ts, database.types.ts
-    stripe/server.ts     Stripe SDK instance (server-only)
+    stripe/              server.ts (SDK instance), webhooks.ts (signature verification)
   hooks/                 Client hooks (use-*.ts)
   test/                  Vitest setup and the server-only stub
   proxy.ts               Session refresh + route protection (Next.js 16 "proxy", formerly middleware)
@@ -70,19 +70,19 @@ src/
 
 ## Where code goes
 
-| You need to…                               | Put it in                                                                                                          |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Add a page                                 | `src/app/(app)/<name>/page.tsx` (protected) or `src/app/(marketing)/` (public); register in `src/config/routes.ts` |
-| Read data on the server                    | `src/features/<domain>/queries.ts` (`server-only`, `React.cache`, explicit columns)                                |
-| Mutate data from our UI                    | `src/features/<domain>/actions.ts` Server Action returning `ActionResult`                                          |
-| Accept calls from outside (webhook, probe) | `src/app/api/<resource>/route.ts` using `apiSuccess`/`apiError`                                                    |
-| Validate input                             | Zod schema in `src/features/<domain>/schemas.ts`, shared by client and server                                      |
-| Add domain UI                              | `src/features/<domain>/components/`                                                                                |
-| Add a reusable primitive                   | `npx shadcn@latest add <name>` into `src/components/ui/`                                                           |
-| Add a table                                | New file in `supabase/migrations/` with RLS, then `npm run db:types`                                               |
-| Add an env var                             | Schema in `src/lib/env/`, `.env.example`, CI env block in `.github/workflows/ci.yml`                               |
-| Add an error kind                          | `ErrorCode` in `src/lib/errors.ts`                                                                                 |
-| Add a route path                           | `ROUTES` in `src/config/routes.ts`                                                                                 |
+| You need to…                               | Put it in                                                                                                                                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add a page                                 | `src/app/(app)/<name>/page.tsx` (protected) or `src/app/(marketing)/` (public); register in `src/config/routes.ts`                                                            |
+| Read data on the server                    | `src/features/<domain>/queries.ts` (`server-only`, `React.cache`, explicit columns)                                                                                           |
+| Mutate data from our UI                    | `src/features/<domain>/actions.ts` Server Action returning `ActionResult`                                                                                                     |
+| Accept calls from outside (webhook, probe) | `src/app/api/<resource>/route.ts` on `createHandler`; webhooks add `lib/<provider>/webhooks.ts` + `features/<domain>/webhook-handlers.ts` (see `.claude/rules/api-routes.md`) |
+| Validate input                             | Zod schema in `src/features/<domain>/schemas.ts`, shared by client and server                                                                                                 |
+| Add domain UI                              | `src/features/<domain>/components/`                                                                                                                                           |
+| Add a reusable primitive                   | `npx shadcn@latest add <name>` into `src/components/ui/`                                                                                                                      |
+| Add a table                                | New file in `supabase/migrations/` with RLS, then `npm run db:types`                                                                                                          |
+| Add an env var                             | Schema in `src/lib/env/`, `.env.example`, CI env block in `.github/workflows/ci.yml`                                                                                          |
+| Add an error kind                          | `ErrorCode` in `src/lib/errors.ts`                                                                                                                                            |
+| Add a route path                           | `ROUTES` in `src/config/routes.ts`                                                                                                                                            |
 
 ## Naming
 
@@ -142,7 +142,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 
 - Expected failures: `throw new AppError(ErrorCode.X, "user-safe message")`.
 - Unexpected failures: let them throw; `failFromError`/`toUserMessage` map them to `ErrorCode.INTERNAL` with a generic message.
-- Route Handlers: `apiError(code, message)`; status comes from `ERROR_STATUS`.
+- Route Handlers: throw `AppError`; `createHandler` renders `apiError(code, message)` with the status from `ERROR_STATUS`.
 - Error boundaries show `error.digest`, never `error.message`.
 
 ## Supabase (summary; full rules in `.claude/rules/supabase.md` and the `supabase` skill)
@@ -207,7 +207,7 @@ variables in `.env.example` and ask the user to set them.
   - `stop-check.sh` (Stop) — refuses to finish a turn while `tsc --noEmit` fails on changed TypeScript.
 - **Rules** (`.claude/rules/`, path-scoped): `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `stripe`, `tests`.
 - **Agents** (`.claude/agents/`, read-only reviewers): `code-reviewer`, `database-reviewer`, `security-reviewer`. Run them before committing non-trivial work.
-- **Commands** (`.claude/commands/`): `/add-feature`, `/add-migration`, `/add-component`, `/review`.
+- **Commands** (`.claude/commands/`): `/add-feature`, `/add-migration`, `/add-endpoint`, `/add-component`, `/review`.
 - **Skills** (`.claude/skills/`): `frontend-design`, `supabase`, `vercel-react-best-practices`, `improve`, `agent-browser` (needs the `agent-browser` CLI installed).
 - **MCP servers** (`.mcp.json`): `shadcn` (local, via npx), `supabase` (hosted, read-only; authenticates in the browser on first use), `stripe` (hosted; authenticates on first use).
 

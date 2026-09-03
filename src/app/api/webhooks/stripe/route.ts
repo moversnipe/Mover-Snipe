@@ -1,35 +1,18 @@
-import type Stripe from "stripe"
-
 import {
   HANDLED_EVENT_TYPES,
   handleStripeEvent,
 } from "@/features/billing/webhook-handlers"
+import { createHandler } from "@/lib/api/handler"
 import { apiError, apiSuccess } from "@/lib/api/response"
-import { serverEnv } from "@/lib/env/server"
 import { ErrorCode } from "@/lib/errors"
 import { logger } from "@/lib/logger"
-import { stripe } from "@/lib/stripe/server"
+import { verifyStripeWebhook } from "@/lib/stripe/webhooks"
 
 // Signature verification needs the raw body and Node crypto.
 export const runtime = "nodejs"
 
-export const POST = async (request: Request) => {
-  const signature = request.headers.get("stripe-signature")
-  if (!signature) {
-    return apiError(ErrorCode.VALIDATION, "Missing stripe-signature header")
-  }
-
-  let event: Stripe.Event
-  try {
-    event = await stripe.webhooks.constructEventAsync(
-      await request.text(),
-      signature,
-      serverEnv.STRIPE_WEBHOOK_SECRET
-    )
-  } catch {
-    logger.warn("Rejected Stripe webhook with invalid signature")
-    return apiError(ErrorCode.VALIDATION, "Invalid signature")
-  }
+export const POST = createHandler(async ({ request }) => {
+  const event = await verifyStripeWebhook(request)
 
   if (!HANDLED_EVENT_TYPES.has(event.type)) {
     return apiSuccess({ received: true, handled: false })
@@ -48,4 +31,4 @@ export const POST = async (request: Request) => {
   }
 
   return apiSuccess({ received: true, handled: true })
-}
+})

@@ -4,6 +4,7 @@ import { cache } from "react"
 import { redirect } from "next/navigation"
 
 import { ROUTES } from "@/config/routes"
+import { AppError, ErrorCode } from "@/lib/errors"
 import { createClient } from "@/lib/supabase/server"
 
 /**
@@ -22,6 +23,13 @@ export const getUser = cache(async () => {
 export const requireUser = async () => {
   const user = await getUser()
   if (!user) redirect(ROUTES.login)
+  return user
+}
+
+/** Current user, or throw UNAUTHENTICATED. Use in Route Handlers (createHandler maps it to 401). */
+export const getUserOrThrow = async () => {
+  const user = await getUser()
+  if (!user) throw new AppError(ErrorCode.UNAUTHENTICATED, "Sign in required")
   return user
 }
 

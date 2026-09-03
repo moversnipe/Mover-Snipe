@@ -28,7 +28,7 @@ commands) so AI-assisted changes follow the same conventions as human ones.
 - `src/lib/env/`: Zod-validated `clientEnv` / `serverEnv`; the app fails fast when a variable is missing.
 - `src/lib/errors.ts`: stable `ErrorCode`s, `AppError`, HTTP status mapping.
 - `src/lib/actions/result.ts`: one `ActionResult` shape for every Server Action.
-- `src/lib/api/response.ts`: one JSON envelope for every Route Handler.
+- `src/lib/api/`: `createHandler` wrapper, request validation helpers, and one JSON envelope for every Route Handler; a structure test keeps new endpoints on the same shape.
 - `src/lib/logger.ts`: structured JSON logging.
 - Root `error.tsx`, `global-error.tsx`, `loading.tsx`, `not-found.tsx`.
 - 60+ shadcn/ui components (Base UI, `render` prop composition), dark mode via `next-themes`.
@@ -128,9 +128,9 @@ src/
 ├── lib/
 │   ├── env/                    client.ts · server.ts
 │   ├── actions/result.ts       ActionResult contract
-│   ├── api/response.ts         Route Handler envelope
+│   ├── api/                    handler · validate · response
 │   ├── supabase/               client · server · admin · session · database.types
-│   ├── stripe/server.ts
+│   ├── stripe/                 server · webhooks
 │   ├── errors.ts · logger.ts · utils.ts
 ├── hooks/                      use-mobile.ts
 ├── test/                       Vitest setup
@@ -159,7 +159,7 @@ Open the repo in Claude Code and the setup in `.claude/` activates:
 - **Hooks** format and lint each edited file, block edits to secrets and merged migrations, block remote Supabase pushes and force pushes, and refuse to end a turn while type-check fails. They are guardrails against likely mistakes, not a security sandbox.
 - **Rules** load per path (`src/app`, `src/features`, `supabase`, …).
 - **Agents**: `code-reviewer`, `database-reviewer`, `security-reviewer` (read-only).
-- **Commands**: `/add-feature`, `/add-migration`, `/add-component`, `/review`.
+- **Commands**: `/add-feature`, `/add-migration`, `/add-endpoint`, `/add-component`, `/review`.
 - **MCP servers** (`.mcp.json`): shadcn registry, Supabase (read-only), Stripe. The hosted servers ask you to sign in on first use.
 
 ## Environment variables
