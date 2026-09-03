@@ -30,6 +30,7 @@ comment on table public.customers is
 
 alter table public.customers enable row level security;
 -- Intentionally no policies: only the service-role client may read or write.
+-- Intentionally no updated_at: rows are written once and never modified.
 
 -- Stripe products.
 create table public.products (
@@ -47,6 +48,8 @@ comment on table public.products is
   'Mirror of Stripe products (id = Stripe product id). Synced by webhook.';
 
 alter table public.products enable row level security;
+
+create index products_active_idx on public.products (active) where active;
 
 create policy "Anyone can view active products"
   on public.products
@@ -83,6 +86,8 @@ create index prices_product_id_idx on public.prices (product_id);
 
 alter table public.prices enable row level security;
 
+create index prices_active_idx on public.prices (active) where active;
+
 create policy "Anyone can view active prices"
   on public.prices
   for select
@@ -99,7 +104,8 @@ create table public.subscriptions (
   id text primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
   status public.subscription_status not null,
-  price_id text references public.prices (id),
+  -- set null: a price archived/deleted in Stripe must not block the sync.
+  price_id text references public.prices (id) on delete set null,
   quantity integer,
   cancel_at_period_end boolean not null default false,
   current_period_start timestamptz,
@@ -119,6 +125,8 @@ comment on table public.subscriptions is
 
 create index subscriptions_user_id_idx on public.subscriptions (user_id);
 
+create index subscriptions_price_id_idx on public.subscriptions (price_id);
+
 alter table public.subscriptions enable row level security;
 
 create policy "Users can view their own subscriptions"
@@ -131,3 +139,33 @@ create trigger subscriptions_set_updated_at
   before update on public.subscriptions
   for each row
   execute function public.set_updated_at();
+
+-- Subscribers keep read access to the price and product they are on, even
+-- after Stripe archives them (active = false). Permissive policies combine
+-- with the "active" policies above by OR.
+create policy "Users can view prices on their own subscriptions"
+  on public.prices
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.subscriptions
+      where subscriptions.price_id = prices.id
+        and subscriptions.user_id = (select auth.uid())
+    )
+  );
+
+create policy "Users can view products on their own subscriptions"
+  on public.products
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.prices
+      join public.subscriptions on subscriptions.price_id = prices.id
+      where prices.product_id = products.id
+        and subscriptions.user_id = (select auth.uid())
+    )
+  );

@@ -11,6 +11,19 @@ file=$(json_field "$input" "tool_input.file_path")
 root="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 rel="${file#"$root"/}"
 
+# A migration is immutable once it is on main (or applied anywhere). Compare
+# against origin/main when that ref exists, otherwise fall back to HEAD.
+migration_is_published() {
+  local ref
+  for ref in origin/main origin/HEAD HEAD; do
+    if git -C "$root" rev-parse --verify --quiet "$ref" >/dev/null 2>&1; then
+      git -C "$root" cat-file -e "$ref:$1" 2>/dev/null
+      return $?
+    fi
+  done
+  return 1
+}
+
 case "$rel" in
   .env.example)
     exit 0
@@ -24,8 +37,8 @@ case "$rel" in
     exit 2
     ;;
   supabase/migrations/*.sql)
-    if git -C "$root" cat-file -e "HEAD:$rel" 2>/dev/null; then
-      echo "Blocked: '$rel' is already committed and may be applied to a database. Create a new migration instead: npm run db:migration -- <description>" >&2
+    if migration_is_published "$rel"; then
+      echo "Blocked: '$rel' is already on main and may be applied to a database. Create a new migration instead: npm run db:migration -- <description>" >&2
       exit 2
     fi
     ;;

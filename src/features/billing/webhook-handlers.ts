@@ -14,6 +14,10 @@ import { stripe } from "@/lib/stripe/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { TablesInsert } from "@/lib/supabase/database.types"
 
+// Admin client throughout: the webhook runs with no user session, and the
+// mirror tables intentionally have no client write policies. Every event is
+// signature-verified in the route before it reaches this module.
+
 /**
  * Stripe event types this app reacts to. Anything else is acknowledged and
  * ignored so Stripe does not retry it.

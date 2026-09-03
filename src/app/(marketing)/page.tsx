@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 
 import { DEFAULT_AUTHENTICATED_PATH, ROUTES } from "@/config/routes"
@@ -5,6 +6,11 @@ import { siteConfig } from "@/config/site"
 import { getUser } from "@/features/auth/queries"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
+
+export const metadata: Metadata = {
+  title: { absolute: siteConfig.name },
+  description: siteConfig.description,
+}
 
 const HomePage = async () => {
   const user = await getUser()

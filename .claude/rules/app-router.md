@@ -19,4 +19,4 @@ Zod schemas.
 - Set `export const metadata` (or `generateMetadata`) on every page. Titles use the template from the root layout.
 - Keep `error.tsx`, `loading.tsx`, `not-found.tsx` at the segment where they apply. `global-error.tsx` must render `<html>` and `<body>` itself.
 - Never render `error.message` from an error boundary; show `error.digest` and a generic message.
-- Route Handlers live only under `src/app/api/` (see `api-routes.md`). Prefer Server Actions for mutations triggered by our own UI.
+- Route Handlers live under `src/app/api/` (see `api-routes.md`). The single exception is `auth/callback/route.ts`, the PKCE redirect endpoint Supabase Auth calls back into; it returns redirects, not the JSON envelope. Prefer Server Actions for mutations triggered by our own UI.

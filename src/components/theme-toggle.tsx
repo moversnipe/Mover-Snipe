@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -12,12 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-/**
- * ThemeToggle component to toggle the theme of the application.
- *
- * @returns {React.ReactNode} The ThemeToggle component.
- */
-export function ThemeToggle() {
+export const ThemeToggle = () => {
   const { setTheme } = useTheme()
 
   return (

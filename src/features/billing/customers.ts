@@ -40,6 +40,20 @@ export const getOrCreateStripeCustomerId = async (
     .from("customers")
     .insert({ id: user.id, stripe_customer_id: customer.id })
 
+  // Two concurrent checkouts can race here. The primary key rejects the
+  // second insert (Postgres 23505); return the mapping the winner stored.
+  if (insertError?.code === "23505") {
+    const { data: winner } = await admin
+      .from("customers")
+      .select("stripe_customer_id")
+      .eq("id", user.id)
+      .single()
+    if (winner) {
+      await stripe.customers.del(customer.id)
+      return winner.stripe_customer_id
+    }
+  }
+
   if (insertError) {
     logger.error("Failed to persist Stripe customer mapping", {
       userId: user.id,

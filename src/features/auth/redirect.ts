@@ -1,3 +1,5 @@
+import { ROUTES } from "@/config/routes"
+
 /**
  * Only allow same-origin path redirects for the `next` parameter.
  * Rejects protocol-relative ("//host"), backslash parser-confusion ("/\host"),
@@ -5,7 +7,7 @@
  */
 export const sanitizeNextPath = (
   raw: string | null | undefined,
-  fallback = "/"
+  fallback: string = ROUTES.home
 ): string => {
   if (!raw) return fallback
   if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {

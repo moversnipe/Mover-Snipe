@@ -12,8 +12,8 @@ requirements.
 ## Migrations (`supabase/migrations/`)
 
 - Create with `npm run db:migration -- <short_description>` so the file gets a `YYYYMMDDHHmmss_` prefix, or name it by hand in that format (UTC).
-- A committed migration is immutable: never edit it, write a new one. (A hook enforces this.)
-- Every new table: `comment on table`, `enable row level security`, one policy per operation with explicit `to` roles, `(select auth.uid())`, indexes on policy columns, and an `updated_at` trigger using `public.set_updated_at()`.
+- A migration is immutable once it is on `main` or has been applied to any database: never edit it, write a new one. The `protect-files.sh` hook blocks edits to migrations present on `origin/main` (falling back to `HEAD` when that ref is unavailable). Migrations that exist only on your unmerged branch may still be amended.
+- Every new table: `comment on table`, `enable row level security`, one policy per operation and audience with explicit `to` roles, `(select auth.uid())`, indexes on policy and foreign-key columns, and an `updated_at` trigger using `public.set_updated_at()` on tables whose rows change (an insert-only mapping table such as `customers` may omit it; say so in a comment). Several permissive `select` policies are allowed when they grant different audiences, since Postgres combines them with OR; comment the intent.
 - IDs: `uuid` referencing `auth.users` for per-user rows; Stripe ids stay `text` primary keys; otherwise `bigint generated always as identity`.
 - Lowercase SQL, `public.` schema prefix, snake_case, plural tables, singular columns, `{table_singular}_id` foreign keys, `timestamptz` for time.
 - Functions: `security invoker` unless the function must act for the system (then `security definer` with a comment), always `set search_path = ''`.

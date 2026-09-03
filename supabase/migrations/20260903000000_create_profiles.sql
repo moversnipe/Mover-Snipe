@@ -28,6 +28,9 @@ create policy "Users can update their own profile"
   using ((select auth.uid()) = id)
   with check ((select auth.uid()) = id);
 
+-- Intentionally no insert/delete policies: rows are created by
+-- handle_new_user() below and removed by the cascade from auth.users.
+
 -- Keep updated_at current. Reused by later tables.
 create or replace function public.set_updated_at()
 returns trigger
@@ -70,3 +73,24 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row
   execute function public.handle_new_user();
+
+-- Keep the mirrored email current when it changes in auth.users.
+create or replace function public.handle_user_email_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.profiles
+  set email = new.email
+  where id = new.id;
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_email_updated
+  after update of email on auth.users
+  for each row
+  when (old.email is distinct from new.email)
+  execute function public.handle_user_email_update();

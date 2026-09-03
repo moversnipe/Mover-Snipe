@@ -14,6 +14,7 @@ import {
   ok,
 } from "@/lib/actions/result"
 import { ErrorCode } from "@/lib/errors"
+import { logger } from "@/lib/logger"
 import { createClient } from "@/lib/supabase/server"
 
 export type AuthActionResult = ActionResult<{ message?: string }>
@@ -30,9 +31,13 @@ export const signIn = async (
 
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword(validated.data)
-  if (error) return fail(ErrorCode.UNAUTHENTICATED, error.message)
+  if (error) {
+    // Never forward Supabase's message: it can reveal whether the email exists.
+    logger.warn("Sign-in failed", { code: error.code })
+    return fail(ErrorCode.UNAUTHENTICATED, "Invalid email or password.")
+  }
 
-  revalidatePath("/", "layout")
+  revalidatePath(ROUTES.home, "layout")
   redirect(
     sanitizeNextPath(
       formData.get("next")?.toString(),
@@ -59,18 +64,36 @@ export const signUp = async (
   callbackUrl.searchParams.set("next", next)
 
   const supabase = await createClient()
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     ...validated.data,
     options: { emailRedirectTo: callbackUrl.toString() },
   })
-  if (error) return fail(ErrorCode.VALIDATION, error.message)
+  if (error) {
+    logger.warn("Sign-up failed", { code: error.code })
+    return fail(
+      ErrorCode.VALIDATION,
+      "Could not create the account. Try a different email or a stronger password."
+    )
+  }
 
-  return ok({ message: "Check your email to confirm your account." })
+  // With email confirmation disabled (the Supabase CLI default), signUp
+  // returns a session and the user is already signed in.
+  if (!data.session) {
+    return ok({ message: "Check your email to confirm your account." })
+  }
+
+  revalidatePath(ROUTES.home, "layout")
+  redirect(next)
 }
 
+/**
+ * Redirect-only action bound straight to <form action>. It takes no input and
+ * always ends in redirect(), so it is exempt from the ActionResult contract
+ * (see .claude/rules/server-actions.md).
+ */
 export const signOut = async (): Promise<void> => {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  revalidatePath("/", "layout")
+  revalidatePath(ROUTES.home, "layout")
   redirect(ROUTES.login)
 }

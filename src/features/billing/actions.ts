@@ -37,11 +37,19 @@ export const startCheckout = async (
   // Re-validate the price against our RLS-protected mirror so a client cannot
   // check out with an inactive or unknown price.
   const supabase = await createClient()
-  const { data: price } = await supabase
+  const { data: price, error: priceError } = await supabase
     .from("prices")
     .select("id, type")
     .eq("id", validated.data.priceId)
     .maybeSingle()
+  if (priceError) {
+    logger.error("Price lookup failed", {
+      userId: user.id,
+      priceId: validated.data.priceId,
+      code: priceError.code,
+    })
+    return fail(ErrorCode.INTERNAL, "Could not load that plan.")
+  }
   if (!price) return fail(ErrorCode.NOT_FOUND, "That plan is not available.")
 
   let url: string | null

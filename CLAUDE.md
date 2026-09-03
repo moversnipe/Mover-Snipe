@@ -10,11 +10,10 @@ something the code does not do.
 
 ## Project
 
-Next.js 16 (App Router, `src/proxy.ts`) + React 19 + TypeScript 6 +
-Tailwind CSS 4 + shadcn/ui on **Base UI** + **Supabase** (Postgres, Auth, RLS)
-
-- **Stripe** (Checkout, Customer Portal, webhooks) + TanStack Query +
-  react-hook-form/zod + Vitest.
+Next.js 16 (App Router, `src/proxy.ts`), React 19, TypeScript 6,
+Tailwind CSS 4, shadcn/ui on **Base UI**, **Supabase** (Postgres, Auth, RLS),
+**Stripe** (Checkout, Customer Portal, webhooks), TanStack Query,
+react-hook-form with zod, and Vitest.
 
 Supabase and Stripe are required. `src/lib/env/` validates every variable at
 startup and throws with the missing names.
@@ -42,7 +41,7 @@ startup and throws with the missing names.
 ```
 .claude/                 Claude Code setup: settings.json, hooks/, rules/, agents/, commands/, skills/
 .github/                 CI (lint, type-check, test, build) and Dependabot
-supabase/migrations/     SQL migrations (immutable once committed)
+supabase/migrations/     SQL migrations (immutable once merged or applied)
 src/
   app/                   Routes only. Thin pages/layouts; no business logic.
     (marketing)/         Public pages            -> /
@@ -111,7 +110,7 @@ src/
 
 ## Code style
 
-- `const` arrow functions everywhere: `const handleClick = () => {}`. Two exceptions: `src/components/ui/` keeps upstream `function` style, and Next.js entry files still need `export default <Component>` after the `const`.
+- `const` arrow functions everywhere: `const handleClick = () => {}`. Two exceptions: `src/components/ui/` keeps upstream `function` style, and Next.js entry files still need `export default <Component>` after the `const`. Prefer `type` over `interface`.
 - Early returns; no nested ternaries beyond one level; descriptive names over comments.
 - TypeScript strict. No `any`, no non-null `!` except immediately after a check, no `as` casts to silence errors. Index access is `T | undefined` (`noUncheckedIndexedAccess`): handle it.
 - Imports, in groups separated by blank lines: `react`/`next`, third-party, `@/config`, `@/features`, `@/components`, `@/lib`, relative. Always use the `@/` alias; never barrel files.
@@ -135,6 +134,8 @@ src/
 → `revalidatePath` → `redirect()` outside `try/catch`. Client binds with
 `useActionState(action, undefined)` and reads `fieldError(state, "field")`.
 `useFormStatus()` is the correct hook for pending state in child submit buttons.
+Redirect-only, input-less actions such as `signOut` may return `Promise<void>`.
+Error messages returned to users are fixed strings; provider messages are logged, never forwarded.
 
 ## Errors
 
@@ -146,8 +147,8 @@ src/
 ## Supabase (summary; full rules in `.claude/rules/supabase.md` and the `supabase` skill)
 
 - `await createClient()` (server) / `createClient()` (browser) run as the user under RLS. `createAdminClient()` bypasses RLS and is used only in `features/billing/customers.ts` and `features/billing/webhook-handlers.ts`.
-- Every table has RLS enabled, one policy per operation, `to <role>`, `(select auth.uid())`, indexes on policy columns. Private tables have no policies and a comment saying so.
-- Migrations are immutable once committed. After adding one: `npm run db:reset`, `npm run db:types`, commit both.
+- Every table has RLS enabled, one policy per operation and audience, `to <role>`, `(select auth.uid())`, indexes on policy and foreign-key columns. Private tables have no policies and a comment saying so.
+- Migrations are immutable once on `main` or applied to any database. After adding one: `npm run db:reset`, `npm run db:types`, commit both.
 - Explicit column lists in every `select`.
 
 ## Stripe (summary; full rules in `.claude/rules/stripe.md`)
@@ -198,7 +199,7 @@ variables in `.env.example` and ask the user to set them.
 - **`.claude/settings.json`** — allowlist for the npm/npx/git commands above; denies reading `.env*` secrets, remote Supabase pushes/resets, force pushes.
 - **Hooks** (`.claude/hooks/`, all invoked by `settings.json`):
   - `session-start.sh` — installs deps if `node_modules` is missing, warns if `.env.local` is absent.
-  - `protect-files.sh` (PreToolUse Edit/Write) — blocks edits to `.env*` secrets, `package-lock.json`, and already-committed migrations.
+  - `protect-files.sh` (PreToolUse Edit/Write) — blocks edits to `.env*` secrets, `package-lock.json`, and migrations already on `origin/main` (or `HEAD` if that ref is missing).
   - `guard-bash.sh` (PreToolUse Bash) — blocks remote Supabase ops, force pushes, deleting migrations, reading secret env files.
   - `check-file.sh` (PostToolUse Edit/Write) — Prettier-formats the file and fails the tool call on ESLint errors.
   - `stop-check.sh` (Stop) — refuses to finish a turn while `tsc --noEmit` fails on changed TypeScript.

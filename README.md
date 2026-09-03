@@ -55,7 +55,7 @@ cp .env.example .env.local
 
 ```bash
 npx supabase init      # once; creates supabase/config.toml
-npm run db:start       # starts Postgres, Auth, Studio, Mailpit; prints keys
+npm run db:start       # starts Postgres, Auth, Studio, email testing server; prints keys
 npm run db:reset       # applies supabase/migrations/
 ```
 
@@ -68,14 +68,18 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/auth/callback"]
 ```
 
-Restart the stack after editing `config.toml` (`npm run db:stop && npm run db:start`).
-Sign-up confirmation emails appear in the Mailpit URL printed by `db:start`.
+Email confirmation is **off** in the CLI's default `config.toml`
+(`[auth.email] enable_confirmations = false`), so local sign-up signs the user
+in immediately. To test the confirmation flow, set it to `true`; the emails are
+then viewable in the local email testing server (`[local_smtp]`, port 54324 by
+default). Restart the stack after editing `config.toml`
+(`npm run db:stop && npm run db:start`).
 
-### 3. Stripe (test mode)
+### 3. Stripe (sandbox or test mode)
 
 1. Put your test secret key in `.env.local` as `STRIPE_SECRET_KEY`.
 2. In a second terminal run `npm run stripe:listen` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`.
-3. In the Stripe Dashboard (test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
+3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
 4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `openBillingPortal` can create sessions).
 
 ### 4. Run
@@ -84,8 +88,8 @@ Sign-up confirmation emails appear in the Mailpit URL printed by `db:start`.
 npm run dev
 ```
 
-Open http://localhost:3000, create an account, confirm it via Mailpit, then
-visit `/billing` and check out with Stripe's test card `4242 4242 4242 4242`.
+Open http://localhost:3000, create an account, then visit `/billing` and
+check out with Stripe's test card `4242 4242 4242 4242`.
 
 ## Scripts
 
@@ -143,8 +147,8 @@ style, security rules) and `.claude/rules/*.md` hold path-specific rules. They
 are written for AI agents but apply to everyone. Highlights:
 
 - Routes are thin; domain code lives in `src/features/<domain>/` with fixed file names.
-- Server Actions return `ActionResult`; Route Handlers return `{ data }` or `{ error: { code, message } }`.
-- Every table has RLS with one policy per operation; committed migrations are immutable.
+- Server Actions return `ActionResult`; API Route Handlers return `{ data }` or `{ error: { code, message } }`.
+- Every table has RLS with one policy per operation and audience; migrations are immutable once merged or applied.
 - The Stripe webhook is the only writer of the billing tables.
 - `npm run check` must pass before every commit.
 
