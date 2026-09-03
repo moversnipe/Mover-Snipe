@@ -1,12 +1,14 @@
 import { cookies } from "next/headers"
 
-import { SIDEBAR_STATE_COOKIE } from "@/config/navigation"
+import {
+  SIDEBAR_STATE_COOKIE,
+  isSidebarOpenByDefault,
+} from "@/config/navigation"
 import { SignOutButton } from "@/features/auth/components/sign-out-button"
 import { requireUser } from "@/features/auth/queries"
 import { AppBreadcrumb } from "@/components/app-breadcrumb"
 import { AppSidebar } from "@/components/app-sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Separator } from "@/components/ui/separator"
 import {
   SidebarInset,
   SidebarProvider,
@@ -20,7 +22,9 @@ const AppLayout = async ({ children }: { children: React.ReactNode }) => {
   // each other. The cookie keeps the first server render in step with the
   // sidebar state the user last chose, so it does not flash open on reload.
   const [, cookieStore] = await Promise.all([requireUser(), cookies()])
-  const defaultOpen = cookieStore.get(SIDEBAR_STATE_COOKIE)?.value !== "false"
+  const defaultOpen = isSidebarOpenByDefault(
+    cookieStore.get(SIDEBAR_STATE_COOKIE)?.value
+  )
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
@@ -28,10 +32,6 @@ const AppLayout = async ({ children }: { children: React.ReactNode }) => {
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4"
-          />
           <AppBreadcrumb />
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />

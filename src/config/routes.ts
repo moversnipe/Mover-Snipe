@@ -61,9 +61,14 @@ const AUTH_ENTRY_PATHS: readonly string[] = [
 /**
  * True when `pathname` is `candidate` itself or a path nested under it, so that
  * `/billing/invoices` counts as being inside `/billing` but `/billingx` does not.
+ *
+ * `"/"` matches only itself. Without that guard the nested check would compare
+ * against `"//"`, which would make `//dashboard` look like it sits under the
+ * public home page and so slip past `isPublicPath`.
  */
 export const isPathWithin = (pathname: string, candidate: string): boolean =>
-  pathname === candidate || pathname.startsWith(`${candidate}/`)
+  pathname === candidate ||
+  (candidate !== "/" && pathname.startsWith(`${candidate}/`))
 
 export const isPublicPath = (pathname: string): boolean =>
   PUBLIC_PATHS.some((publicPath) => isPathWithin(pathname, publicPath))

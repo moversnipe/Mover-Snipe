@@ -90,6 +90,16 @@ export const findNavMatch = (pathname: string): NavMatch | null => {
 /**
  * Cookie the sidebar writes its open state into, read by `(app)/layout.tsx` so
  * the first server render matches. Mirrors `SIDEBAR_COOKIE_NAME` in the
- * vendored `src/components/ui/sidebar.tsx`, which does not export it.
+ * vendored `src/components/ui/sidebar.tsx`, which does not export it; the
+ * structural case in `navigation.test.ts` fails if that name ever drifts.
  */
 export const SIDEBAR_STATE_COOKIE = "sidebar_state"
+
+/**
+ * Whether the sidebar starts expanded for the cookie value on this request.
+ * Anything other than an explicit `"false"` — a missing cookie included —
+ * opens it, so a first visit gets the full navigation.
+ */
+export const isSidebarOpenByDefault = (
+  cookieValue: string | undefined
+): boolean => cookieValue !== "false"

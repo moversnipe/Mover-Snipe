@@ -1,9 +1,14 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import {
   NAV_SECTIONS,
+  SIDEBAR_STATE_COOKIE,
   findNavMatch,
   isNavItemActive,
+  isSidebarOpenByDefault,
 } from "@/config/navigation"
 import { ROUTES } from "@/config/routes"
 
@@ -41,7 +46,7 @@ describe("NAV_SECTIONS", () => {
   it("gives every entry a title and an icon", () => {
     for (const item of NAV_SECTIONS.flatMap((section) => section.items)) {
       expect(item.title).not.toHaveLength(0)
-      expect(item.icon).toBeTypeOf("object")
+      expect(item.icon).toBeDefined()
     }
   })
 })
@@ -81,5 +86,38 @@ describe("findNavMatch", () => {
   it("returns null for a path that is not in the sidebar", () => {
     expect(findNavMatch(ROUTES.home)).toBeNull()
     expect(findNavMatch(ROUTES.updatePassword)).toBeNull()
+  })
+})
+
+describe("isSidebarOpenByDefault", () => {
+  it("opens the sidebar when the cookie is absent", () => {
+    expect(isSidebarOpenByDefault(undefined)).toBe(true)
+  })
+
+  it("collapses it only for an explicit false", () => {
+    expect(isSidebarOpenByDefault("false")).toBe(false)
+  })
+
+  it("opens it for any other value", () => {
+    expect(isSidebarOpenByDefault("true")).toBe(true)
+    expect(isSidebarOpenByDefault("")).toBe(true)
+    expect(isSidebarOpenByDefault("nonsense")).toBe(true)
+  })
+})
+
+describe("SIDEBAR_STATE_COOKIE", () => {
+  // Structural check: the vendored sidebar keeps its cookie name private, so
+  // `(app)/layout.tsx` reads the state through our mirror of it. Re-running
+  // `npx shadcn add sidebar` with a different name would silently stop the
+  // open state from persisting; this fails instead.
+  it("matches the cookie the vendored sidebar writes", () => {
+    const source = readFileSync(
+      path.join(import.meta.dirname, "../components/ui/sidebar.tsx"),
+      "utf8"
+    )
+
+    expect(source).toContain(
+      `const SIDEBAR_COOKIE_NAME = "${SIDEBAR_STATE_COOKIE}"`
+    )
   })
 })

@@ -40,6 +40,13 @@ describe("AppSidebar", () => {
     }
   })
 
+  it("exposes the links inside a navigation landmark", () => {
+    renderSidebar(ROUTES.dashboard)
+
+    const nav = screen.getByRole("navigation", { name: "Main" })
+    expect(nav).toContainElement(screen.getByRole("link", { name: "Mails" }))
+  })
+
   it("labels the section groups", () => {
     renderSidebar(ROUTES.dashboard)
 

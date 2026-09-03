@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { Crosshair } from "lucide-react"
 
 import { NAV_SECTIONS, isNavItemActive } from "@/config/navigation"
 import { ROUTES } from "@/config/routes"
@@ -18,13 +19,12 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { Crosshair } from "lucide-react"
 
-export const AppSidebar = (props: React.ComponentProps<typeof Sidebar>) => {
+export const AppSidebar = () => {
   const pathname = usePathname()
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -42,34 +42,41 @@ export const AppSidebar = (props: React.ComponentProps<typeof Sidebar>) => {
       </SidebarHeader>
 
       <SidebarContent>
-        {NAV_SECTIONS.map((section) => (
-          <SidebarGroup key={section.label ?? "overview"}>
-            {section.label ? (
-              <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-            ) : null}
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {section.items.map((item) => {
-                  const isActive = isNavItemActive(pathname, item.href)
+        {/*
+          The vendored sidebar renders plain `div`/`ul` elements, so the app
+          would otherwise have no navigation landmark. `contents` keeps this
+          wrapper out of the flex layout while still exposing the role.
+        */}
+        <nav aria-label="Main" className="contents">
+          {NAV_SECTIONS.map((section) => (
+            <SidebarGroup key={section.label ?? "overview"}>
+              {section.label ? (
+                <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+              ) : null}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items.map((item) => {
+                    const isActive = isNavItemActive(pathname, item.href)
 
-                  return (
-                    <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        tooltip={item.title}
-                        aria-current={isActive ? "page" : undefined}
-                        render={<Link href={item.href} />}
-                      >
-                        <item.icon aria-hidden="true" />
-                        <span>{item.title}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          tooltip={item.title}
+                          aria-current={isActive ? "page" : undefined}
+                          render={<Link href={item.href} />}
+                        >
+                          <item.icon aria-hidden="true" />
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </nav>
       </SidebarContent>
 
       <SidebarRail />

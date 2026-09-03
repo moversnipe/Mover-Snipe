@@ -19,6 +19,12 @@ describe("isPathWithin", () => {
   it("does not match a sibling that merely shares a prefix", () => {
     expect(isPathWithin("/billingx", "/billing")).toBe(false)
   })
+
+  it("matches the root path only against itself", () => {
+    expect(isPathWithin("/", "/")).toBe(true)
+    expect(isPathWithin("/dashboard", "/")).toBe(false)
+    expect(isPathWithin("//dashboard", "/")).toBe(false)
+  })
 })
 
 describe("isPublicPath", () => {
@@ -46,6 +52,12 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/dashboard")).toBe(false)
     expect(isPublicPath("/api/webhooks")).toBe(false)
     expect(isPublicPath("/authx")).toBe(false)
+  })
+
+  it("keeps protected pages protected behind a doubled leading slash", () => {
+    expect(isPublicPath("//dashboard")).toBe(false)
+    expect(isPublicPath("//listings")).toBe(false)
+    expect(isPublicPath("//settings")).toBe(false)
   })
 })
 
