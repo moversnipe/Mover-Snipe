@@ -7,9 +7,11 @@ import { Crosshair } from "lucide-react"
 import { NAV_SECTIONS, isNavItemActive } from "@/config/navigation"
 import { ROUTES } from "@/config/routes"
 import { siteConfig } from "@/config/site"
+import { NavUser } from "@/features/auth/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -20,11 +22,23 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-export const AppSidebar = () => {
+type AppSidebarProps = {
+  /** Signed-in account shown in the footer card. */
+  user: {
+    name: string
+    email: string
+    avatarUrl: string | null
+  }
+}
+
+export const AppSidebar = ({ user }: AppSidebarProps) => {
   const pathname = usePathname()
 
+  // `inset` drops the sidebar's own panel background and turns the paired
+  // `SidebarInset` into a rounded, floating content card. The wrapper picks up
+  // the sidebar colour as the page background via `has-data-[variant=inset]`.
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -83,6 +97,10 @@ export const AppSidebar = () => {
           ))}
         </nav>
       </SidebarContent>
+
+      <SidebarFooter>
+        <NavUser {...user} />
+      </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>

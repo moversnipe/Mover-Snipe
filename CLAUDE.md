@@ -55,7 +55,7 @@ src/
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
-    auth/                Credentials/password schemas, getUser/requireUser, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms
+    auth/                Credentials/password schemas, getUser/requireUser/getProfile, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms, sidebar account card (nav-user)
     billing/             Products/prices/subscription queries, checkout + portal actions, webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
   components/            App-wide, domain-free pieces (app sidebar, breadcrumb, providers, theme toggle)
@@ -173,7 +173,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 - Add primitives with the CLI; compose in feature components; tokens from `globals.css`; light and dark must both work.
 - Accessibility is required: semantic HTML, labelled controls, keyboard access, `sr-only` text on icon buttons.
 - For new UI, load the `frontend-design` skill and stay inside its "Constraints for this repository" section.
-- Signed-in pages render inside the sidebar shell in `(app)/layout.tsx`; a page supplies its own heading and content only. Nav entries come from `NAV_SECTIONS`, never from JSX in the sidebar.
+- Signed-in pages render inside the sidebar shell in `(app)/layout.tsx`; a page supplies its own heading and content only. Nav entries come from `NAV_SECTIONS`, never from JSX in the sidebar. The sidebar uses `variant="inset"`, and its footer holds the account card that owns theme and sign-out.
 
 ## Testing
 
