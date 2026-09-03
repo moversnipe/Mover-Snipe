@@ -1,6 +1,25 @@
 import { describe, expect, it } from "vitest"
 
-import { ROUTES, isAuthEntryPath, isPublicPath } from "@/config/routes"
+import {
+  ROUTES,
+  isAuthEntryPath,
+  isPathWithin,
+  isPublicPath,
+} from "@/config/routes"
+
+describe("isPathWithin", () => {
+  it("matches the candidate itself", () => {
+    expect(isPathWithin("/billing", "/billing")).toBe(true)
+  })
+
+  it("matches paths nested under the candidate", () => {
+    expect(isPathWithin("/billing/invoices", "/billing")).toBe(true)
+  })
+
+  it("does not match a sibling that merely shares a prefix", () => {
+    expect(isPathWithin("/billingx", "/billing")).toBe(false)
+  })
+})
 
 describe("isPublicPath", () => {
   it("treats the home page as public", () => {

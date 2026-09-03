@@ -25,6 +25,12 @@ AI-assisted changes follow the same conventions as human ones.
 - `/billing`: pricing table from the database, Stripe Checkout, Customer Portal.
 - `/dashboard`: profile and current subscription.
 
+**App shell**
+
+- Collapsible shadcn/ui sidebar over every signed-in page, driven by `NAV_SECTIONS` in `src/config/navigation.ts`: Dashboard on its own, then **Pipeline** (Listings, Prospects), **Outreach** (Templates, Campaigns, Mails), and **Account** (Billing, Settings).
+- The active entry is derived from the current path, so a nested page such as `/listings/<id>` keeps Listings selected, and the header breadcrumb names the section and page.
+- Open/collapsed state persists in the `sidebar_state` cookie and is read back in `(app)/layout.tsx`, so the first server render matches what the user last chose. Toggle with the header button, the rail, or `Ctrl`/`Cmd` + `B`.
+
 **Foundation**
 
 - `src/lib/env/`: Zod-validated `clientEnv` / `serverEnv`; the app fails fast when a variable is missing.
@@ -115,9 +121,12 @@ check out with Stripe's test card `4242 4242 4242 4242`.
 src/
 ├── app/                        Routes only (thin)
 │   ├── (marketing)/page.tsx    Public landing page
-│   ├── (app)/                  Signed-in area; layout enforces auth
+│   ├── (app)/                  Signed-in area; layout enforces auth and
+│   │   │                       renders the collapsible sidebar shell
 │   │   ├── dashboard/page.tsx
-│   │   └── billing/page.tsx
+│   │   ├── listings/ · prospects/          Pipeline
+│   │   ├── templates/ · campaigns/ · mails/  Outreach
+│   │   └── billing/ · settings/            Account
 │   ├── auth/                   layout.tsx · login/ · sign-up/ · sign-up-success/
 │   │                           forgot-password/ · update-password/
 │   │                           callback/route.ts · auth-code-error/
@@ -128,8 +137,9 @@ src/
 │   └── billing/                schemas · queries · actions · customers · webhook-handlers · enums · format · components/
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI
-│   └── providers.tsx · theme-provider.tsx · theme-toggle.tsx
-├── config/                     routes.ts · site.ts
+│   └── app-sidebar.tsx · app-breadcrumb.tsx · providers.tsx
+│       theme-provider.tsx · theme-toggle.tsx
+├── config/                     routes.ts · navigation.ts · site.ts
 ├── lib/
 │   ├── env/                    client.ts · server.ts
 │   ├── actions/result.ts       ActionResult contract

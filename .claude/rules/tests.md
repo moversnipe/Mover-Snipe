@@ -8,7 +8,7 @@ paths:
 
 # Testing rules
 
-- Runner: Vitest + Testing Library, jsdom, configured in `vitest.config.mts`; setup in `src/test/setup.ts`.
+- Runner: Vitest + Testing Library, jsdom, configured in `vitest.config.mts`; setup in `src/test/setup.ts`. That setup also shims `window.matchMedia` (jsdom has none) to match nothing, so components reading `useIsMobile` render their desktop branch.
 - Tests sit next to the file they cover: `format.ts` → `format.test.ts`. No `__tests__` folders. Three tests are structural rather than colocated, and check source text so a convention break fails CI without a database or a running app: `supabase/migrations.test.ts` (migration file names, RLS policy naming), `supabase/functions.test.ts` (`verify_jwt = false` and `withSupabase` per Edge Function), and `src/app/api/conventions.test.ts` (the shape of every `route.ts`). `vitest.config.mts` includes `supabase/**/*.test.ts` for the first two.
 - Name suites after the export under test and cases after behaviour: `describe("formatPrice")`, `it("formats recurring prices with their interval")`.
 - Test pure logic directly (helpers, schemas, result mappers, route policy). Test components through roles and labels (`getByRole`, `getByLabelText`), never by class names.

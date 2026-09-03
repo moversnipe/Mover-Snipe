@@ -14,7 +14,13 @@ export const ROUTES = {
   authCallback: "/auth/callback",
   authError: "/auth/auth-code-error",
   dashboard: "/dashboard",
+  listings: "/listings",
+  prospects: "/prospects",
+  templates: "/templates",
+  campaigns: "/campaigns",
+  mails: "/mails",
   billing: "/billing",
+  settings: "/settings",
   api: {
     health: "/api/health",
     stripeWebhook: "/api/webhooks/stripe",
@@ -52,14 +58,18 @@ const AUTH_ENTRY_PATHS: readonly string[] = [
   ROUTES.forgotPassword,
 ]
 
-const matchesPath = (pathname: string, candidate: string): boolean =>
+/**
+ * True when `pathname` is `candidate` itself or a path nested under it, so that
+ * `/billing/invoices` counts as being inside `/billing` but `/billingx` does not.
+ */
+export const isPathWithin = (pathname: string, candidate: string): boolean =>
   pathname === candidate || pathname.startsWith(`${candidate}/`)
 
 export const isPublicPath = (pathname: string): boolean =>
-  PUBLIC_PATHS.some((publicPath) => matchesPath(pathname, publicPath))
+  PUBLIC_PATHS.some((publicPath) => isPathWithin(pathname, publicPath))
 
 export const isAuthEntryPath = (pathname: string): boolean =>
-  AUTH_ENTRY_PATHS.some((entryPath) => matchesPath(pathname, entryPath))
+  AUTH_ENTRY_PATHS.some((entryPath) => isPathWithin(pathname, entryPath))
 
 /** Where a signed-in user lands after login or when visiting an auth page. */
 export const DEFAULT_AUTHENTICATED_PATH = ROUTES.dashboard
