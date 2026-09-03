@@ -4,7 +4,7 @@ description: Guidelines for writing Supabase Edge Functions
 
 # Writing Supabase Edge Functions
 
-You're an expert in writing TypeScript and Deno JavaScript runtime. Generate **high-quality Supabase Edge Functions** that adhere to the following best practices:
+Apply these rules whenever you write a Supabase Edge Function under `supabase/functions/`.
 
 ## Guidelines
 
@@ -34,7 +34,7 @@ interface reqPayload {
   name: string
 }
 
-console.info('server started')
+console.info("server started")
 
 Deno.serve(async (req: Request) => {
   const { name }: reqPayload = await req.json()
@@ -43,7 +43,7 @@ Deno.serve(async (req: Request) => {
   }
 
   return new Response(JSON.stringify(data), {
-    headers: { 'Content-Type': 'application/json', Connection: 'keep-alive' },
+    headers: { "Content-Type": "application/json", Connection: "keep-alive" },
   })
 })
 ```
@@ -51,13 +51,13 @@ Deno.serve(async (req: Request) => {
 ### Example Function using Node built-in API
 
 ```tsx
-import { randomBytes } from 'node:crypto'
-import { createServer } from 'node:http'
-import process from 'node:process'
+import { randomBytes } from "node:crypto"
+import { createServer } from "node:http"
+import process from "node:process"
 
 const generateRandomString = (length) => {
   const buffer = randomBytes(length)
-  return buffer.toString('hex')
+  return buffer.toString("hex")
 }
 
 const randomString = generateRandomString(10)
@@ -74,12 +74,12 @@ server.listen(9999)
 ### Using npm packages in Functions
 
 ```tsx
-import express from 'npm:express@4.18.2'
+import express from "npm:express@4.18.2"
 
 const app = express()
 
 app.get(/(.*)/, (req, res) => {
-  res.send('Welcome to Supabase')
+  res.send("Welcome to Supabase")
 })
 
 app.listen(8000)
@@ -88,16 +88,16 @@ app.listen(8000)
 ### Generate embeddings using built-in @Supabase.ai API
 
 ```tsx
-const model = new Supabase.ai.Session('gte-small')
+const model = new Supabase.ai.Session("gte-small")
 
 Deno.serve(async (req: Request) => {
   const params = new URL(req.url).searchParams
-  const input = params.get('text')
+  const input = params.get("text")
   const output = await model.run(input, { mean_pool: true, normalize: true })
   return new Response(JSON.stringify(output), {
     headers: {
-      'Content-Type': 'application/json',
-      Connection: 'keep-alive',
+      "Content-Type": "application/json",
+      Connection: "keep-alive",
     },
   })
 })

@@ -1,29 +1,23 @@
-import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server"
 
-// Only allow same-origin path redirects: must start with exactly one "/"
-// ("//host" and "/\\host" are protocol-relative / parser-confusion forms).
-export const sanitizeNextPath = (raw: string | null): string => {
-  if (!raw) return '/'
-  if (!raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) {
-    return '/'
-  }
-  return raw
-}
+import { DEFAULT_AUTHENTICATED_PATH, ROUTES } from "@/config/routes"
+import { sanitizeNextPath } from "@/features/auth/redirect"
+import { createClient } from "@/lib/supabase/server"
 
-export async function GET(request: Request) {
+/** Exchanges the PKCE `code` from a Supabase email link for a session. */
+export const GET = async (request: Request) => {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = sanitizeNextPath(searchParams.get('next'))
+  const code = searchParams.get("code")
+  const next = sanitizeNextPath(
+    searchParams.get("next"),
+    DEFAULT_AUTHENTICATED_PATH
+  )
 
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
-    }
+    if (!error) return NextResponse.redirect(`${origin}${next}`)
   }
 
-  // Return to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  return NextResponse.redirect(`${origin}${ROUTES.authError}`)
 }
