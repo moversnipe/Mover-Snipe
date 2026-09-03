@@ -1,13 +1,14 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 
 import { updatePassword } from "@/features/auth/actions"
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message"
+import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button"
+import { PasswordRequirements } from "@/features/auth/components/password-requirements"
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -17,10 +18,15 @@ import { fieldError } from "@/lib/actions/result"
 
 export const UpdatePasswordForm = () => {
   const [state, formAction] = useActionState(updatePassword, undefined)
+  const [password, setPassword] = useState("")
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <FieldGroup>
+        <AuthPageHeader
+          title="Set a new password"
+          description="Enter a new password for your account. It replaces the old one immediately"
+        />
         <Field>
           <FieldLabel htmlFor="password">New password</FieldLabel>
           <Input
@@ -28,9 +34,11 @@ export const UpdatePasswordForm = () => {
             name="password"
             type="password"
             autoComplete="new-password"
+            aria-describedby="password-requirements"
             required
+            onChange={(event) => setPassword(event.target.value)}
           />
-          <FieldDescription>At least 8 characters.</FieldDescription>
+          <PasswordRequirements id="password-requirements" value={password} />
           <FieldError>{fieldError(state, "password")}</FieldError>
         </Field>
         <Field>
@@ -45,7 +53,9 @@ export const UpdatePasswordForm = () => {
           <FieldError>{fieldError(state, "confirmPassword")}</FieldError>
         </Field>
         <AuthFormMessage state={state} />
-        <AuthSubmitButton>Update password</AuthSubmitButton>
+        <Field>
+          <AuthSubmitButton>Update password</AuthSubmitButton>
+        </Field>
       </FieldGroup>
     </form>
   )

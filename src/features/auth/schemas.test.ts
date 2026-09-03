@@ -1,17 +1,69 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  PASSWORD_RULES,
   credentialsSchema,
   forgotPasswordSchema,
+  getUnmetPasswordRules,
   signUpSchema,
   updatePasswordSchema,
 } from "@/features/auth/schemas"
+
+const STRONG_PASSWORD = "Str0ng!pass"
+
+describe("PASSWORD_RULES", () => {
+  it("covers length, lowercase, uppercase, number, and symbol", () => {
+    expect(PASSWORD_RULES.map((rule) => rule.id)).toEqual([
+      "length",
+      "lowercase",
+      "uppercase",
+      "number",
+      "symbol",
+    ])
+  })
+
+  it("counts every symbol Supabase Auth accepts", () => {
+    for (const symbol of "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~") {
+      expect(getUnmetPasswordRules(`Abcdefg1${symbol}`)).toEqual([])
+    }
+  })
+})
+
+describe("getUnmetPasswordRules", () => {
+  it("returns nothing for a password that satisfies every rule", () => {
+    expect(getUnmetPasswordRules(STRONG_PASSWORD)).toEqual([])
+  })
+
+  it("names each rule the password misses, in checklist order", () => {
+    expect(getUnmetPasswordRules("abc").map((rule) => rule.id)).toEqual([
+      "length",
+      "uppercase",
+      "number",
+      "symbol",
+    ])
+  })
+
+  it("does not count a space as a symbol", () => {
+    expect(getUnmetPasswordRules("Abcdefg1 ").map((rule) => rule.id)).toEqual([
+      "symbol",
+    ])
+  })
+})
 
 describe("credentialsSchema", () => {
   it("accepts a valid email and an 8+ character password", () => {
     const result = credentialsSchema.safeParse({
       email: "user@example.com",
       password: "longenough",
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it("does not apply the composition rules to an existing password", () => {
+    // Accounts created before the rules existed must still be able to sign in.
+    const result = credentialsSchema.safeParse({
+      email: "user@example.com",
+      password: "alllowercase",
     })
     expect(result.success).toBe(true)
   })
@@ -34,20 +86,50 @@ describe("credentialsSchema", () => {
 })
 
 describe("signUpSchema", () => {
-  it("accepts matching passwords", () => {
+  it("accepts matching passwords that meet every rule", () => {
     const result = signUpSchema.safeParse({
       email: "user@example.com",
-      password: "longenough",
-      confirmPassword: "longenough",
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
     })
     expect(result.success).toBe(true)
+  })
+
+  it.each([
+    ["too short", "Ab1!"],
+    ["no lowercase letter", "ABCDEFG1!"],
+    ["no uppercase letter", "abcdefg1!"],
+    ["no number", "Abcdefgh!"],
+    ["no symbol", "Abcdefg1"],
+  ])("rejects a password with %s", (_, password) => {
+    const result = signUpSchema.safeParse({
+      email: "user@example.com",
+      password,
+      confirmPassword: password,
+    })
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error.issues[0]?.path).toEqual(["password"])
+  })
+
+  it("lists the missing rules in the password message", () => {
+    const result = signUpSchema.safeParse({
+      email: "user@example.com",
+      password: "abcdefgh",
+      confirmPassword: "abcdefgh",
+    })
+    expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error.issues[0]?.message).toBe(
+      "Password needs an uppercase letter, a number, a symbol, such as ! @ # $ %"
+    )
   })
 
   it("reports a mismatch on the confirmation field", () => {
     const result = signUpSchema.safeParse({
       email: "user@example.com",
-      password: "longenough",
-      confirmPassword: "different",
+      password: STRONG_PASSWORD,
+      confirmPassword: "Different1!",
     })
     expect(result.success).toBe(false)
     if (result.success) return
@@ -70,26 +152,28 @@ describe("forgotPasswordSchema", () => {
 })
 
 describe("updatePasswordSchema", () => {
-  it("accepts a long enough password typed twice", () => {
+  it("accepts a compliant password typed twice", () => {
     const result = updatePasswordSchema.safeParse({
-      password: "longenough",
-      confirmPassword: "longenough",
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
     })
     expect(result.success).toBe(true)
   })
 
-  it("rejects a short password", () => {
+  it("rejects a password that misses a rule", () => {
     const result = updatePasswordSchema.safeParse({
-      password: "short",
-      confirmPassword: "short",
+      password: "longenough",
+      confirmPassword: "longenough",
     })
     expect(result.success).toBe(false)
+    if (result.success) return
+    expect(result.error.issues[0]?.path).toEqual(["password"])
   })
 
   it("reports a mismatch on the confirmation field", () => {
     const result = updatePasswordSchema.safeParse({
-      password: "longenough",
-      confirmPassword: "longenoug",
+      password: STRONG_PASSWORD,
+      confirmPassword: "Str0ng!pas",
     })
     expect(result.success).toBe(false)
     if (result.success) return

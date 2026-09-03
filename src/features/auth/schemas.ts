@@ -2,14 +2,97 @@ import { z } from "zod"
 
 const emailSchema = z.email("Enter a valid email address")
 
-const passwordSchema = z
+export const PASSWORD_MIN_LENGTH = 8
+
+/**
+ * The symbol set Supabase Auth counts for its
+ * `lower_upper_letters_digits_symbols` password requirement. Keeping the two
+ * in step means a password this schema accepts is never rejected by Auth for
+ * lacking a symbol.
+ */
+const PASSWORD_SYMBOLS = "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~"
+
+const hasSymbol = (value: string): boolean =>
+  [...value].some((character) => PASSWORD_SYMBOLS.includes(character))
+
+export type PasswordRuleId =
+  "length" | "lowercase" | "uppercase" | "number" | "symbol"
+
+export type PasswordRule = {
+  id: PasswordRuleId
+  /** Shown in the live checklist under the password input. */
+  label: string
+  test: (value: string) => boolean
+}
+
+/**
+ * What a new password must contain. The checklist component renders these
+ * one by one as the user types; `passwordSchema` enforces the same list on
+ * the server so the two can never disagree.
+ */
+export const PASSWORD_RULES: readonly PasswordRule[] = [
+  {
+    id: "length",
+    label: `At least ${PASSWORD_MIN_LENGTH} characters`,
+    test: (value) => value.length >= PASSWORD_MIN_LENGTH,
+  },
+  {
+    id: "lowercase",
+    label: "A lowercase letter",
+    test: (value) => /[a-z]/.test(value),
+  },
+  {
+    id: "uppercase",
+    label: "An uppercase letter",
+    test: (value) => /[A-Z]/.test(value),
+  },
+  {
+    id: "number",
+    label: "A number",
+    test: (value) => /[0-9]/.test(value),
+  },
+  {
+    id: "symbol",
+    label: "A symbol, such as ! @ # $ %",
+    test: hasSymbol,
+  },
+]
+
+/** The rules `value` does not satisfy yet, in checklist order. */
+export const getUnmetPasswordRules = (value: string): PasswordRule[] =>
+  PASSWORD_RULES.filter((rule) => !rule.test(value))
+
+const lowercaseFirst = (text: string): string =>
+  text.charAt(0).toLowerCase() + text.slice(1)
+
+/** New passwords (sign-up, update): every rule in `PASSWORD_RULES`. */
+const passwordSchema = z.string().superRefine((value, context) => {
+  const unmet = getUnmetPasswordRules(value)
+  if (unmet.length === 0) return
+
+  context.addIssue({
+    code: "custom",
+    message: `Password needs ${unmet
+      .map((rule) => lowercaseFirst(rule.label))
+      .join(", ")}`,
+  })
+})
+
+/**
+ * Existing passwords (sign-in): only the minimum length. Accounts created
+ * before the composition rules existed must still be able to sign in.
+ */
+const existingPasswordSchema = z
   .string()
-  .min(8, "Password must be at least 8 characters")
+  .min(
+    PASSWORD_MIN_LENGTH,
+    `Password must be at least ${PASSWORD_MIN_LENGTH} characters`
+  )
 
 /** Sign-in: what the user types on /auth/login. */
 export const credentialsSchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
+  password: existingPasswordSchema,
 })
 
 export type CredentialsInput = z.infer<typeof credentialsSchema>

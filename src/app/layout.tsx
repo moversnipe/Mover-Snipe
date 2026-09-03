@@ -25,9 +25,16 @@ export const metadata: Metadata = {
   description: siteConfig.description,
 }
 
+// The font variables live on <html>, not <body>: globals.css applies
+// `font-sans` to the html element, so the variables have to be defined there
+// or the declaration cannot resolve and the browser default font wins.
 const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => (
-  <html lang="en" suppressHydrationWarning>
-    <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+  <html
+    lang="en"
+    className={`${geistSans.variable} ${geistMono.variable}`}
+    suppressHydrationWarning
+  >
+    <body className="antialiased">
       <Providers>{children}</Providers>
     </body>
   </html>
