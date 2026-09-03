@@ -3,7 +3,7 @@
 import { EllipsisVertical, LogOut } from "lucide-react"
 
 import { signOut } from "@/features/auth/actions"
-import { initialsOf, isRenderableAvatar } from "@/features/auth/avatar"
+import { getInitials, isRenderableAvatar } from "@/features/auth/account"
 import { ThemeMenuItems } from "@/components/theme-toggle"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -53,7 +53,7 @@ export const NavUser = ({ name, email, avatarUrl }: NavUserProps) => {
                 <AvatarImage className="rounded-lg" src={avatarUrl} alt="" />
               ) : null}
               <AvatarFallback className="rounded-lg text-xs">
-                {initialsOf(name)}
+                {getInitials(name)}
               </AvatarFallback>
             </Avatar>
             <div className="grid flex-1 leading-tight">

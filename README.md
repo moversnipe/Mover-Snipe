@@ -137,7 +137,7 @@ src/
 │   ├── api/                    health/, webhooks/stripe/
 │   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
 ├── features/                   Domain modules
-│   ├── auth/                   schemas · queries · actions · redirect · otp · components/
+│   ├── auth/                   schemas · queries · actions · redirect · account · components/
 │   └── billing/                schemas · queries · actions · customers · webhook-handlers · enums · format · components/
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI

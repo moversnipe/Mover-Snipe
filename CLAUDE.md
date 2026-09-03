@@ -55,7 +55,7 @@ src/
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
-    auth/                Credentials/password schemas, getUser/requireUser/getProfile, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms, sidebar account card (nav-user) and its avatar helpers
+    auth/                Credentials/password schemas, getUser/requireUser/getProfile, sign-in/up/out, password reset + update, next-path guard, auth forms, sidebar account card (nav-user) and its display helpers (account.ts)
     billing/             Products/prices/subscription queries, checkout + portal actions, webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
   components/            App-wide, domain-free pieces (app sidebar, breadcrumb, providers, theme toggle)

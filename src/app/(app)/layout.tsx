@@ -4,6 +4,7 @@ import {
   SIDEBAR_STATE_COOKIE,
   isSidebarOpenByDefault,
 } from "@/config/navigation"
+import { getAccountLabels } from "@/features/auth/account"
 import { NavUser } from "@/features/auth/components/nav-user"
 import { getProfile, requireUser } from "@/features/auth/queries"
 import { AppBreadcrumb } from "@/components/app-breadcrumb"
@@ -26,10 +27,7 @@ const AppLayout = async ({ children }: { children: React.ReactNode }) => {
   )
   // Needs the id from the check above, so it cannot join the batch.
   const profile = await getProfile(user.id)
-  // One fallback chain, on `||` rather than `??`, so a blank `full_name` (the
-  // column allows one) drops through instead of rendering an empty card.
-  const email = profile?.email || user.email || ""
-  const name = profile?.full_name?.trim() || email || "Account"
+  const { name, email } = getAccountLabels(profile, user.email)
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>

@@ -25,10 +25,10 @@ export const isRenderableAvatar = (
 /**
  * Up to two initials for the avatar fallback: "Ada Lovelace" -> "AL".
  *
- * Returns "?" for a name that yields none, which the app's own fallback chain
- * already prevents; kept so the helper stands on its own.
+ * Returns "?" for a name that yields none, which `getAccountLabels` already
+ * prevents; kept so the helper stands on its own.
  */
-export const initialsOf = (name: string): string => {
+export const getInitials = (name: string): string => {
   const initials = name
     .split(/\s+/)
     .filter(Boolean)
@@ -37,4 +37,22 @@ export const initialsOf = (name: string): string => {
     .join("")
 
   return initials || "?"
+}
+
+/**
+ * What the account card shows for the signed-in user.
+ *
+ * One chain on `||` rather than `??`: `profiles.full_name` is nullable `text`
+ * with no check, so a blank string has to fall through the same way a missing
+ * one does, and the JWT carries no email claim for phone or anonymous
+ * sign-in. Without that, the card could render a blank name over a blank
+ * email over "?".
+ */
+export const getAccountLabels = (
+  profile: { email: string | null; full_name: string | null } | null,
+  claimedEmail: string | undefined
+): { name: string; email: string } => {
+  const email = profile?.email || claimedEmail || ""
+
+  return { name: profile?.full_name?.trim() || email || "Account", email }
 }

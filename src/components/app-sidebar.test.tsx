@@ -75,9 +75,6 @@ describe("AppSidebar", () => {
       "page"
     )
   })
-})
-
-describe("AppSidebar chrome", () => {
   it("mounts the footer it is handed", () => {
     renderSidebar(ROUTES.dashboard)
 
