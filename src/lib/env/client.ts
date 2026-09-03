@@ -9,6 +9,10 @@ import { z } from "zod"
  * The Supabase key is the project's publishable key (`sb_publishable_...`).
  * The legacy `anon` JWT is accepted too because the local CLI stack may still
  * issue it; both grant the same low privileges under RLS.
+ *
+ * This holds ONE key's value. Edge Functions receive every publishable key at
+ * once in the platform's `SUPABASE_PUBLISHABLE_KEYS` JSON object; when copying
+ * from there, take the `default` entry's value rather than the object itself.
  */
 const supabasePublishableKey = z
   .string()
