@@ -12,12 +12,13 @@ vi.mock("@/features/auth/actions", () => ({
 describe("SignUpForm", () => {
   it("labels the three inputs an account needs", () => {
     render(<SignUpForm />)
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Create an account" })
+    ).toBeInTheDocument()
     expect(screen.getByLabelText("Email")).toBeInTheDocument()
     expect(screen.getByLabelText("Password")).toBeInTheDocument()
     expect(screen.getByLabelText("Confirm password")).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "Sign Up with Email" })
-    ).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled()
   })
 
   it("asks the browser for a new password, not a saved one", () => {
@@ -25,6 +26,14 @@ describe("SignUpForm", () => {
     expect(screen.getByLabelText("Password")).toHaveAttribute(
       "autocomplete",
       "new-password"
+    )
+  })
+
+  it("links to login, carrying the return path along", () => {
+    render(<SignUpForm next={ROUTES.billing} />)
+    expect(screen.getByRole("link", { name: "Login" })).toHaveAttribute(
+      "href",
+      `${ROUTES.login}?next=${encodeURIComponent(ROUTES.billing)}`
     )
   })
 
