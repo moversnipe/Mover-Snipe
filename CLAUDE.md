@@ -50,7 +50,7 @@ supabase/                config.toml (signing keys, verify_jwt = false per funct
 src/
   app/                   Routes only. Thin pages/layouts; no business logic.
     (marketing)/         Public pages            -> /
-    (app)/               Signed-in pages         -> /dashboard, /billing (layout calls requireUser)
+    (app)/               Signed-in pages         -> /dashboard, /listings, /prospects, /templates, /campaigns, /mails, /billing, /settings (layout calls requireUser)
     auth/                Shared layout, login, sign-up (+ success), forgot/update password, PKCE callback, auth error page
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css

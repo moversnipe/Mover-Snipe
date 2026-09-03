@@ -22,8 +22,7 @@ AI-assisted changes follow the same conventions as human ones.
 
 - `products`, `prices`, `subscriptions`, `customers` tables mirrored from Stripe by the webhook at `/api/webhooks/stripe`.
 - `webhook_events` idempotency ledger: every webhook (Stripe or a future provider) is processed at most once per event id; replays, concurrent deliveries, and retries after failure are handled by an atomic claim function.
-- `/billing`: pricing table from the database, Stripe Checkout, Customer Portal.
-- `/dashboard`: profile and current subscription.
+- The checkout and portal UI — pricing table, `startCheckout`, `openBillingPortal`, and the subscription summary — lives in `src/features/billing/`, but no page mounts it yet: `/billing` and `/dashboard` are placeholders like the rest of the app. Compose those components into a page when the billing screens are designed.
 
 **App shell**
 
@@ -87,7 +86,7 @@ show up there too. Restart the stack after editing `config.toml`
 1. Put your test secret key in `.env.local` as `STRIPE_SECRET_KEY`.
 2. In a second terminal run `npm run stripe:listen` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`.
 3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
-4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `openBillingPortal` can create sessions).
+4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `openBillingPortal` can create sessions, once a page mounts it).
 
 ### 4. Run
 
@@ -95,8 +94,11 @@ show up there too. Restart the stack after editing `config.toml`
 npm run dev
 ```
 
-Open http://localhost:3000, create an account, then visit `/billing` and
-check out with Stripe's test card `4242 4242 4242 4242`.
+Open http://localhost:3000 and create an account. To verify the Stripe half
+end to end, keep `npm run stripe:listen` running and create or edit a product
+with a recurring price in the Stripe Dashboard: the webhook writes it to
+`products`/`prices`. There is no checkout screen to click through yet — see
+the Billing note above.
 
 ## Scripts
 
