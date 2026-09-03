@@ -1,3 +1,6 @@
+// `server-only`: the helper logs the provider's message, which belongs on the
+// server. Nothing here needs the browser, and no caller today is a Client
+// Component — drop this line if one ever legitimately needs it.
 import "server-only"
 
 import { logger } from "@/lib/logger"
@@ -26,6 +29,11 @@ export type SupabaseQueryError = {
   hint?: string | null
 }
 
+// The separate type alias is required, not stylistic: TypeScript only honours
+// an assertion signature when the call target carries an explicit annotation.
+// Inlining `(...): asserts error is null =>` breaks every call site with
+// "Assertions require every name in the call target to have an explicit type
+// annotation."
 type ThrowIfError = (
   error: SupabaseQueryError | null,
   context: string
@@ -38,6 +46,9 @@ type ThrowIfError = (
  * The message is for the server log only: unexpected failures stay plain
  * `Error`s, so `failFromError`/`error.tsx` still show the user a generic line
  * and a digest, never the provider's text.
+ *
+ * For queries and webhook handlers, which throw. Server Actions must return an
+ * `ActionResult` instead, so they keep logging the code and returning `fail()`.
  */
 export const throwIfError: ThrowIfError = (error, context) => {
   if (!error) return
