@@ -1,6 +1,6 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import Link from "next/link"
 
 import { ROUTES } from "@/config/routes"
@@ -8,6 +8,7 @@ import { signUp } from "@/features/auth/actions"
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message"
 import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button"
+import { PasswordRequirements } from "@/features/auth/components/password-requirements"
 import {
   Field,
   FieldDescription,
@@ -25,6 +26,7 @@ type SignUpFormProps = {
 
 export const SignUpForm = ({ next }: SignUpFormProps) => {
   const [state, formAction] = useActionState(signUp, undefined)
+  const [password, setPassword] = useState("")
   const loginHref = next
     ? `${ROUTES.login}?next=${encodeURIComponent(next)}`
     : ROUTES.login
@@ -56,11 +58,11 @@ export const SignUpForm = ({ next }: SignUpFormProps) => {
             name="password"
             type="password"
             autoComplete="new-password"
+            aria-describedby="password-requirements"
             required
+            onChange={(event) => setPassword(event.target.value)}
           />
-          <FieldDescription>
-            Must be at least 8 characters long.
-          </FieldDescription>
+          <PasswordRequirements id="password-requirements" value={password} />
           <FieldError>{fieldError(state, "password")}</FieldError>
         </Field>
         <Field>

@@ -1,14 +1,14 @@
 "use client"
 
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 
 import { updatePassword } from "@/features/auth/actions"
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message"
 import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button"
+import { PasswordRequirements } from "@/features/auth/components/password-requirements"
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -18,6 +18,7 @@ import { fieldError } from "@/lib/actions/result"
 
 export const UpdatePasswordForm = () => {
   const [state, formAction] = useActionState(updatePassword, undefined)
+  const [password, setPassword] = useState("")
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -33,11 +34,11 @@ export const UpdatePasswordForm = () => {
             name="password"
             type="password"
             autoComplete="new-password"
+            aria-describedby="password-requirements"
             required
+            onChange={(event) => setPassword(event.target.value)}
           />
-          <FieldDescription>
-            Must be at least 8 characters long.
-          </FieldDescription>
+          <PasswordRequirements id="password-requirements" value={password} />
           <FieldError>{fieldError(state, "password")}</FieldError>
         </Field>
         <Field>
