@@ -41,7 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-raw-data/*
 
 .claude/settings.local.json
 .claude/worktrees/
+# Local JWT signing key (see supabase/config.toml). Never commit.
+supabase/signing_keys.json

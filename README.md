@@ -1,239 +1,192 @@
-# Next.js 16 Boilerplate
+# Next.js + Supabase + Stripe Boilerplate
 
-A modern, feature-rich boilerplate for building full-stack web applications with Next.js 16, React 19, optional Supabase, and shadcn/ui. Get started in minutes with a component library, auth pages, testing, and CI already configured.
+A production-shaped starter for paid web apps: **Next.js 16** (App Router,
+React 19, TypeScript 6), **Supabase** (Postgres with row-level security, Auth),
+**Stripe** (Checkout, Customer Portal, webhook-synced subscriptions), and
+**shadcn/ui on Base UI** with Tailwind CSS 4. Ships with a modular repo layout,
+typed environment validation, a Server Action result contract, structured
+errors, tests, CI, and a complete Claude Code setup (rules, hooks, agents,
+commands) so AI-assisted changes follow the same conventions as human ones.
 
-[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
-[![Supabase](https://img.shields.io/badge/Supabase-optional-green?style=for-the-badge&logo=supabase)](https://supabase.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com/)
+## What is included
 
-## ✨ Features
+**Auth**
 
-### 🚀 Next.js 16 & React 19
-- **App Router** with server and client components
-- **Server Actions** for seamless data mutations
-- **Streaming** with loading states and Suspense
-- **React 19** features including `use()` hook
+- Email + password sign-in and sign-up via Server Actions (`/auth/login`), Zod-validated.
+- PKCE callback (`/auth/callback`) with a sanitized `next` redirect, and an error page.
+- Session refresh and route protection in `src/proxy.ts` driven by `src/config/routes.ts`, using `getClaims()` to verify the JWT signature locally against the project's signing keys.
+- Built for Supabase's **publishable/secret API keys** and **asymmetric JWT signing keys**; Edge Functions run with `verify_jwt = false` and authorise in code (`supabase/functions/whoami` is the template).
+- `profiles` table created for every user by a database trigger.
 
-### 🎨 Beautiful UI Components
-- **60+ shadcn/ui components** pre-configured, built on **Base UI** (`@base-ui/react`) — not Radix. Compose triggers with the `render` prop (e.g. `<DialogTrigger render={<Button />}>`), not `asChild`
-- Includes a chat component set: `message`, `bubble`, `message-scroller`, `attachment`, `marker`
-- **Tailwind CSS 4**, configured directly in `src/app/globals.css` (`@theme`, `@custom-variant`) — there is no separate JS/TS config file for it
-- **Dark/light mode** theming via `next-themes`, wired up in `src/components/providers.tsx` and toggled with `src/components/theme-toggle.tsx`
-- **Framer Motion** for animations, **tw-animate-css** for CSS-based ones
+**Billing**
 
-### 🔐 Authentication & Database (Supabase — optional)
-- **Supabase is optional.** The app runs without it: with no env vars set, the auth middleware becomes a no-op (no redirects) and `createClient`/`createAdminClient` throw a clear error if called. Set the env vars to turn it on — see the "Environment Variables" section below
-- **Auth pages** at `/auth/login` (email/password sign-in and sign-up via Server Actions, validated with Zod schemas in `src/lib/auth/schemas.ts`), plus `/auth/callback` (route handler with a sanitized `next` redirect) and `/auth/auth-code-error`
-- **Row Level Security (RLS)** conventions for `supabase/migrations/` are documented in `CLAUDE.md` for when you add tables
-- **Real-time subscriptions** supported from Client Components
+- `products`, `prices`, `subscriptions`, `customers` tables mirrored from Stripe by the webhook at `/api/webhooks/stripe`.
+- `webhook_events` idempotency ledger: every webhook (Stripe or a future provider) is processed at most once per event id; replays, concurrent deliveries, and retries after failure are handled by an atomic claim function.
+- `/billing`: pricing table from the database, Stripe Checkout, Customer Portal.
+- `/dashboard`: profile and current subscription.
 
-### 📡 Data Fetching
-- **TanStack Query** configured in `src/components/providers.tsx` for client-side caching and mutations
+**Foundation**
 
-### 🛠 Developer Experience
-- **TypeScript** with strict type checking
-- **ESLint** (`eslint-config-next`)
-- **Vitest + Testing Library** test harness (`npm test`) — component and route tests live next to the code they cover
-- **GitHub Actions CI** (`.github/workflows/ci.yml`): lint → type-check → test → build on every push and PR
-- **Path mapping** for clean imports (`@/components`, `@/lib`, ...)
+- `src/lib/env/`: Zod-validated `clientEnv` / `serverEnv`; the app fails fast when a variable is missing.
+- `src/lib/errors.ts`: stable `ErrorCode`s, `AppError`, HTTP status mapping.
+- `src/lib/actions/result.ts`: one `ActionResult` shape for every Server Action.
+- `src/lib/api/`: `createHandler` wrapper, request validation helpers, and one JSON envelope for every Route Handler; a structure test keeps new endpoints on the same shape.
+- `src/lib/logger.ts`: structured JSON logging.
+- Root `error.tsx`, `global-error.tsx`, `loading.tsx`, `not-found.tsx`.
+- 60+ shadcn/ui components (Base UI, `render` prop composition), dark mode via `next-themes`.
+- Vitest + Testing Library, ESLint, Prettier (with Tailwind class sorting), strict TypeScript, GitHub Actions CI, Dependabot.
 
-## 🚀 Quick Start
+## Prerequisites
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/yourusername/nextjs-boilerplate.git
-cd nextjs-boilerplate
-```
+- Node.js 24 (CI version) and npm
+- Docker (for the local Supabase stack)
+- [Supabase CLI](https://supabase.com/docs/guides/local-development) (used via `npx supabase`)
+- [Stripe CLI](https://docs.stripe.com/stripe-cli) (for `npm run stripe:listen`)
+- A Stripe account in test mode
 
-### 2. Install dependencies
+## Quick start
+
+### 1. Install
+
 ```bash
 npm install
-```
-
-### 3. (Optional) Set up Supabase
-Supabase is off by default. To enable it, copy the example env file and fill in your project credentials:
-```bash
 cp .env.example .env.local
 ```
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-```
-Leave these commented out (the default in `.env.example`) to run without Supabase — auth pages and clients stay disabled until they're set.
 
-### 4. Run the development server
+### 2. Supabase (local)
+
+```bash
+npm run db:signing-key # once; writes the local ES256 signing key to supabase/signing_keys.json (gitignored)
+npm run db:start       # starts Postgres, Auth, Studio, email testing server; prints keys
+npm run db:reset       # applies supabase/migrations/
+```
+
+`supabase/config.toml` is committed and already sets the auth redirect URLs,
+`signing_keys_path`, and `verify_jwt = false` for every Edge Function. Copy the
+printed **API URL** and keys into the env file from step 1: the publishable key
+as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the secret key as
+`SUPABASE_SECRET_KEY`. If your CLI version prints only the legacy `anon` and
+`service_role` JWTs, use those in the same variables; the app accepts both.
+
+Email confirmation is **off** in the CLI's default `config.toml`
+(`[auth.email] enable_confirmations = false`), so local sign-up signs the user
+in immediately. To test the confirmation flow, set it to `true`; the emails are
+then viewable in the local email testing server (`[local_smtp]`, port 54324 by
+default). Restart the stack after editing `config.toml`
+(`npm run db:stop && npm run db:start`).
+
+### 3. Stripe (sandbox or test mode)
+
+1. Put your test secret key in `.env.local` as `STRIPE_SECRET_KEY`.
+2. In a second terminal run `npm run stripe:listen` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`.
+3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
+4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `openBillingPortal` can create sessions).
+
+### 4. Run
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to see your application!
+Open http://localhost:3000, create an account, then visit `/billing` and
+check out with Stripe's test card `4242 4242 4242 4242`.
 
-## 📁 Project Structure
+## Scripts
+
+| Script                                      | Purpose                                                        |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| `npm run dev` / `build` / `start`           | Next.js                                                        |
+| `npm run check`                             | format check + lint + type-check + tests (the pre-commit gate) |
+| `npm run format` / `format:check`           | Prettier                                                       |
+| `npm run lint` / `lint:fix`                 | ESLint                                                         |
+| `npm run type-check`                        | `tsc --noEmit`                                                 |
+| `npm test` / `test:watch`                   | Vitest                                                         |
+| `npm run db:start` / `db:stop` / `db:reset` | Local Supabase stack                                           |
+| `npm run db:migration -- <name>`            | New migration file                                             |
+| `npm run db:types`                          | Regenerate `src/lib/supabase/database.types.ts`                |
+| `npm run db:signing-key`                    | Generate the local JWT signing key (gitignored)                |
+| `npm run functions:serve`                   | Serve Edge Functions locally                                   |
+| `npm run stripe:listen`                     | Forward Stripe webhooks to the dev server                      |
+
+## Project structure
 
 ```
-├── src/
-│   ├── app/                     # Next.js App Router pages
-│   │   ├── auth/
-│   │   │   ├── login/           # Sign-in / sign-up (Server Actions)
-│   │   │   ├── callback/        # Auth callback route handler
-│   │   │   └── auth-code-error/
-│   │   ├── globals.css          # Tailwind 4 theme (@theme, @custom-variant)
-│   │   ├── layout.tsx           # Root layout
-│   │   └── page.tsx             # Homepage
-│   ├── components/
-│   │   ├── ui/                  # shadcn/ui components (Base UI)
-│   │   ├── providers.tsx        # QueryClient + Theme providers
-│   │   ├── theme-provider.tsx
-│   │   └── theme-toggle.tsx
-│   ├── hooks/                   # Custom React hooks
-│   ├── lib/
-│   │   ├── auth/                # Zod schemas for auth forms
-│   │   ├── supabase/             # Supabase client/server/middleware/config
-│   │   └── utils.ts              # General utilities (cn(), etc.)
-│   └── test/                    # Vitest setup
-├── supabase/                     # Supabase-related files (empty by default; add migrations/ if you use the Supabase CLI)
-├── .github/workflows/ci.yml      # CI: lint → type-check → test → build
-└── package.json
+src/
+├── app/                        Routes only (thin)
+│   ├── (marketing)/page.tsx    Public landing page
+│   ├── (app)/                  Signed-in area; layout enforces auth
+│   │   ├── dashboard/page.tsx
+│   │   └── billing/page.tsx
+│   ├── auth/                   login/, callback/route.ts, auth-code-error/
+│   ├── api/                    health/, webhooks/stripe/
+│   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
+├── features/                   Domain modules
+│   ├── auth/                   schemas · queries · actions · redirect · components/
+│   └── billing/                schemas · queries · actions · customers · webhook-handlers · enums · format · components/
+├── components/
+│   ├── ui/                     shadcn/ui (Base UI) — add via CLI
+│   └── providers.tsx · theme-provider.tsx · theme-toggle.tsx
+├── config/                     routes.ts · site.ts
+├── lib/
+│   ├── env/                    client.ts · server.ts
+│   ├── actions/result.ts       ActionResult contract
+│   ├── api/                    handler · validate · response · idempotency · webhook-event-store
+│   ├── supabase/               client · server · admin · session · database.types
+│   ├── stripe/                 server · webhooks
+│   ├── errors.ts · logger.ts · utils.ts
+├── hooks/                      use-mobile.ts
+├── test/                       Vitest setup
+└── proxy.ts                    Session refresh + route protection
+supabase/                       config.toml · migrations/ (profiles, billing, webhook_events) · functions/whoami (Edge Function template)
+.claude/                        Claude Code rules, hooks, agents, commands, skills
+.github/                        CI workflow, Dependabot
 ```
 
-## 🎯 Available Scripts
+## Conventions
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run the TypeScript compiler (no emit)
-- `npm test` - Run the Vitest test suite
-- `npm run test:watch` - Run Vitest in watch mode
+`CLAUDE.md` is the canonical conventions document (naming, placement, code
+style, security rules) and `.claude/rules/*.md` hold path-specific rules. They
+are written for AI agents but apply to everyone. Highlights:
 
-## 🔧 Configuration
+- Routes are thin; domain code lives in `src/features/<domain>/` with fixed file names.
+- Server Actions return `ActionResult`; API Route Handlers return `{ data }` or `{ error: { code, message } }`.
+- Every table has RLS with one policy per operation and audience; migrations are immutable once merged or applied.
+- The Stripe webhook is the only writer of the billing tables.
+- `npm run check` must pass before every commit.
 
-### Tailwind CSS
-The project uses Tailwind CSS 4, which is configured in CSS rather than a JS config file. Customize your design tokens in `src/app/globals.css` (`@theme`, `@custom-variant`).
+## Working with Claude Code
 
-### shadcn/ui Components
-Add new components using the shadcn/ui CLI:
-```bash
-npx shadcn@latest add button
-npx shadcn@latest add card
-```
-Components are built on Base UI — compose triggers with the `render` prop instead of Radix's `asChild`.
+Open the repo in Claude Code and the setup in `.claude/` activates:
 
-### Supabase Integration
-- **Client setup**: `src/lib/supabase/client.ts`
-- **Server setup**: `src/lib/supabase/server.ts` (async — see usage example below)
-- **Config helper**: `isSupabaseConfigured()` in `src/lib/supabase/config.ts` lets you branch on whether Supabase env vars are set
-- **Middleware**: `src/lib/supabase/middleware.ts` — a no-op when Supabase isn't configured
+- **Hooks** format and lint each edited file, block edits to secrets and merged migrations, block remote Supabase pushes and force pushes, and refuse to end a turn while type-check fails. They are guardrails against likely mistakes, not a security sandbox.
+- **Rules** load per path (`src/app`, `src/features`, `supabase`, …).
+- **Agents**: `code-reviewer`, `database-reviewer`, `security-reviewer` (read-only).
+- **Commands**: `/add-feature`, `/add-migration`, `/add-endpoint`, `/add-component`, `/review`.
+- **MCP servers** (`.mcp.json`): shadcn registry, Supabase (read-only), Stripe. The hosted servers ask you to sign in on first use.
 
-## 📚 Usage Examples
+## Environment variables
 
-### Creating a Server Component with Data Fetching
-```tsx
-import { createClient } from '@/lib/supabase/server'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-export default async function PostsPage() {
-  const supabase = await createClient()
-  const { data: posts } = await supabase
-    .from('posts')
-    .select('*')
-    .order('created_at', { ascending: false })
+All variables are required (see `.env.example`):
 
-  return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {posts?.map(post => (
-        <Card key={post.id} className="hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>{post.title}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">{post.content}</p>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
-}
-```
+| Variable                               | Scope  | Purpose                                                                                                                       |
+| -------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                 | public | Absolute origin for auth and Stripe redirect URLs                                                                             |
+| `NEXT_PUBLIC_SUPABASE_URL`             | public | Supabase project URL                                                                                                          |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | Supabase publishable key `sb_publishable_...` (RLS applies; legacy anon JWT accepted for the local stack)                     |
+| `SUPABASE_SECRET_KEY`                  | server | Supabase secret key `sb_secret_...` for the admin client; bypasses RLS (legacy service_role JWT accepted for the local stack) |
+| `STRIPE_SECRET_KEY`                    | server | Stripe API key                                                                                                                |
+| `STRIPE_WEBHOOK_SECRET`                | server | Signing secret for `/api/webhooks/stripe`                                                                                     |
 
-### Creating a Client Component with Real-time Data
-```tsx
-'use client'
-import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+## Deploying
 
-export function LiveNotifications() {
-  const [notifications, setNotifications] = useState([])
-  const supabase = createClient()
+1. Create a hosted Supabase project and apply the migrations from your machine with `npx supabase link` then `npx supabase db push` (agents are blocked from doing this).
+2. In the Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to your domain and add `https://<your-domain>/auth/callback` to **Redirect URLs**.
+3. Settings → API Keys → **Publishable and secret API keys**: create the keys (they are named `default`). Use them for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`; do not ship the legacy `anon`/`service_role` JWTs.
+4. Settings → JWT Keys: click **Migrate JWT secret**, then **Rotate keys** to the standby ES256 key. After at least the access-token lifetime plus a margin (75 minutes at the default 1 hour), revoke the legacy secret. `getClaims()` picks up the new keys automatically through the JWKS endpoint.
+5. Deploy Edge Functions with `npx supabase functions deploy`; `config.toml` already disables gateway JWT verification for each, and `withSupabase` authorises in code.
+6. In Stripe (live mode) add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` subscribed to: `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, `price.deleted`, `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Use its signing secret as `STRIPE_WEBHOOK_SECRET`.
+7. Set all six environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('notifications')
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'notifications' },
-        (payload) => {
-          setNotifications(prev => [payload.new, ...prev])
-        }
-      )
-      .subscribe()
+## Learn more
 
-    return () => supabase.removeChannel(channel)
-  }, [supabase])
-
-  return (
-    <div className="space-y-4">
-      {notifications.map(notification => (
-        <div key={notification.id} className="p-4 border rounded-lg">
-          {notification.message}
-        </div>
-      ))}
-    </div>
-  )
-}
-```
-
-## 🔑 Environment Variables
-
-Supabase is **optional**. With no env vars set, the auth middleware no-ops (no redirects) and `createClient`/`createAdminClient` throw a helpful error if called. Set these to enable it:
-
-- `NEXT_PUBLIC_SUPABASE_URL` (required to enable Supabase)
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (required to enable Supabase)
-- `SUPABASE_SERVICE_ROLE_KEY` (additionally required for the admin client)
-
-See `.env.example` for the full reference.
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Push your code to GitHub
-2. Connect your repository to [Vercel](https://vercel.com)
-3. Add your environment variables in the Vercel dashboard (optional — only needed if you're using Supabase)
-4. Deploy automatically on every push
-
-### Other Platforms
-This project can be deployed to any platform that supports Next.js:
-- **Netlify**: Use `@netlify/plugin-nextjs`
-- **Railway**: Connect your GitHub repository
-- **AWS Amplify**: Use the Next.js build settings
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📖 Learn More
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Supabase Documentation](https://supabase.com/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [Base UI Documentation](https://base-ui.com/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [TanStack Query Documentation](https://tanstack.com/query/latest)
-
----
-
-**Built with ❤️ by jakedahn**
+- [Next.js](https://nextjs.org/docs) · [Supabase](https://supabase.com/docs) · [Stripe](https://docs.stripe.com) · [shadcn/ui](https://ui.shadcn.com) · [Base UI](https://base-ui.com/) · [Tailwind CSS](https://tailwindcss.com/docs) · [TanStack Query](https://tanstack.com/query/latest)

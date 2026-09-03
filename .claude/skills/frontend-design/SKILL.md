@@ -1,6 +1,23 @@
-| name | description | license |
-|------|-------------|---------|
-| frontend-design | Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, or applications. Generates creative, polished code that avoids generic AI aesthetics. | Complete terms in LICENSE.txt |
+---
+name: frontend-design
+description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, or applications. Generates creative, polished code that avoids generic AI aesthetics.
+metadata:
+  author: anthropic
+  version: "1.1.0"
+---
+
+# Frontend Design
+
+## Constraints for this repository
+
+Apply everything below within this codebase's system, never around it:
+
+- Build with the shadcn/ui components in `src/components/ui/` (Base UI; use the `render` prop, never `asChild`). Add missing primitives with `npx shadcn@latest add <name>` rather than hand-rolling them.
+- Colours, radii and spacing come from the CSS variables in `src/app/globals.css` (`@theme inline`). Extend the token set there; do not hard-code hex values in components.
+- Fonts are loaded with `next/font` in `src/app/layout.tsx` and exposed as `--font-geist-sans` / `--font-geist-mono`. To change typography, swap or add fonts there, then map them in `@theme`.
+- Animations: Framer Motion for orchestrated/complex motion, `tw-animate-css` utilities for simple CSS animation. Respect `prefers-reduced-motion` (`useReducedMotion`).
+- Both themes must work: check light and dark (`next-themes`, class strategy).
+- Accessibility is non-negotiable: semantic elements, labelled controls, visible focus, keyboard operability.
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 

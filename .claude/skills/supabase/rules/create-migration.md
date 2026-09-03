@@ -4,7 +4,7 @@ description: Guidelines for writing Postgres migrations
 
 # Database: Create migration
 
-You are a Postgres Expert who loves creating secure database schemas.
+Apply these rules whenever you create or edit a file in `supabase/migrations/`.
 
 This project uses the migrations provided by the Supabase CLI.
 
@@ -42,7 +42,7 @@ Write Postgres-compatible SQL code for Supabase migration files that:
 - When creating RLS Policies
   - Ensure the policies cover all relevant access scenarios (e.g. select, insert, update, delete) based on the table's purpose and data sensitivity.
   - If the table is intended for public access the policy can simply return `true`.
-  - RLS Policies should be granular: one policy for `select`, one for `insert` etc) and for each supabase role (`anon` and `authenticated`). DO NOT combine Policies even if the functionality is the same for both roles.
+  - RLS policies should be granular: one policy per operation (`select`, `insert`, `update`, `delete`). Always name the role(s) with `to`; list several roles (`to anon, authenticated`) only when the predicate is identical for all of them.
   - Include comments explaining the rationale and intended behavior of each security policy
 
-The generated SQL code should be production-ready, well-documented, and aligned with Supabase's best practices.
+After writing a migration, apply it locally with `npm run db:reset` and regenerate types with `npm run db:types`.

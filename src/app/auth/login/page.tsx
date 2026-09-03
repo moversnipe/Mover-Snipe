@@ -1,7 +1,8 @@
-import { redirect } from "next/navigation"
+import type { Metadata } from "next"
 
-import { createClient } from "@/lib/supabase/server"
-import { isSupabaseConfigured } from "@/lib/supabase/config"
+import { DEFAULT_AUTHENTICATED_PATH } from "@/config/routes"
+import { LoginForm } from "@/features/auth/components/login-form"
+import { sanitizeNextPath } from "@/features/auth/redirect"
 import {
   Card,
   CardContent,
@@ -9,27 +10,19 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { LoginForm } from "@/app/auth/login/login-form"
 
-const LoginPage = async () => {
-  // This page renders while Supabase may be unconfigured (no env vars set).
-  // In that state `createClient()` throws, so only check for an existing
-  // session when Supabase is actually configured. The middleware never
-  // redirects here when unconfigured, so this branch is unreachable in
-  // practice, but the page must still not crash the build's prerender pass.
-  if (isSupabaseConfigured()) {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+export const metadata: Metadata = { title: "Sign in" }
 
-    if (user) {
-      redirect("/")
-    }
-  }
+type LoginPageProps = {
+  searchParams: Promise<{ next?: string }>
+}
+
+// Signed-in users never reach this page: src/proxy.ts redirects them.
+const LoginPage = async ({ searchParams }: LoginPageProps) => {
+  const { next } = await searchParams
 
   return (
-    <div className="flex min-h-svh items-center justify-center p-4">
+    <main className="flex min-h-svh items-center justify-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Sign in</CardTitle>
@@ -38,10 +31,12 @@ const LoginPage = async () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <LoginForm />
+          <LoginForm
+            next={sanitizeNextPath(next, DEFAULT_AUTHENTICATED_PATH)}
+          />
         </CardContent>
       </Card>
-    </div>
+    </main>
   )
 }
 

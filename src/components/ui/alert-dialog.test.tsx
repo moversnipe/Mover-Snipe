@@ -22,7 +22,9 @@ describe("AlertDialog", () => {
         <AlertDialogTrigger>Open</AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          <AlertDialogDescription>
+            This cannot be undone.
+          </AlertDialogDescription>
           <AlertDialogAction onClick={handleClick}>Continue</AlertDialogAction>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
         </AlertDialogContent>
@@ -45,7 +47,9 @@ describe("AlertDialog", () => {
         <AlertDialogTrigger>Open</AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-          <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+          <AlertDialogDescription>
+            This cannot be undone.
+          </AlertDialogDescription>
           <AlertDialogAction>Continue</AlertDialogAction>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
         </AlertDialogContent>
