@@ -156,7 +156,7 @@ are written for AI agents but apply to everyone. Highlights:
 
 Open the repo in Claude Code and the setup in `.claude/` activates:
 
-- **Hooks** format and lint each edited file, block edits to secrets and committed migrations, block remote Supabase pushes and force pushes, and refuse to end a turn while type-check fails.
+- **Hooks** format and lint each edited file, block edits to secrets and merged migrations, block remote Supabase pushes and force pushes, and refuse to end a turn while type-check fails. They are guardrails against likely mistakes, not a security sandbox.
 - **Rules** load per path (`src/app`, `src/features`, `supabase`, …).
 - **Agents**: `code-reviewer`, `database-reviewer`, `security-reviewer` (read-only).
 - **Commands**: `/add-feature`, `/add-migration`, `/add-component`, `/review`.

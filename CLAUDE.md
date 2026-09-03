@@ -197,6 +197,7 @@ variables in `.env.example` and ask the user to set them.
 ## Claude Code setup in this repo
 
 - **`.claude/settings.json`** — allowlist for the npm/npx/git commands above; denies reading `.env*` secrets, remote Supabase pushes/resets, force pushes.
+- Hooks are **guardrails, not a sandbox**: they catch the mistakes an agent is likely to make and fail closed when they cannot parse their input, but a shell blocklist cannot enumerate every way to read a file. The real controls are that secrets are never committed (`.gitignore`), the Read-tool deny rules, RLS, and human review of the diff.
 - **Hooks** (`.claude/hooks/`, all invoked by `settings.json`):
   - `session-start.sh` — installs deps if `node_modules` is missing, warns if `.env.local` is absent.
   - `protect-files.sh` (PreToolUse Edit/Write) — blocks edits to `.env*` secrets, `package-lock.json`, and migrations already on `origin/main` (or `HEAD` if that ref is missing).
