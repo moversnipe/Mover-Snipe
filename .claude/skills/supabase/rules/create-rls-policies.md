@@ -22,7 +22,7 @@ data such as `public.customers`.
 - Prefer permissive policies. Use `as restrictive` only to add a hard ceiling on top of permissive ones, and comment why.
 - Add an index on every column a policy filters by (`user_id`, `organization_id`, ...).
 - Keep policies simple. Move complex membership checks into a `security definer` function with `set search_path = ''` and call it from the policy.
-- Lowercase SQL. Policy names are short sentences in double quotes.
+- Lowercase SQL. Policy names are one sentence in double quotes with the shape `"<Audience> can <verb> <object>"`: `Users`/`Anyone`/a role noun, then `view`/`create`/`update`/`delete` matching the operation, then the table and its scope. No trailing period; at most 63 characters. Examples: `"Users can create their own notes"`, `"Anyone can view active products"`, `"Team members can view team documents"`.
 - Explain the intent in an SQL comment above the policy.
 
 ## Roles

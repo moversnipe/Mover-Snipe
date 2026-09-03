@@ -13,6 +13,7 @@ first, then review every changed `.sql` file and `src/lib/supabase/database.type
 Check, for each new or altered table:
 
 - `alter table ... enable row level security` is present.
+- Policy names match `"<Audience> can <verb> <object>"` with the verb fixed by operation (select → view, insert → create, update → update, delete → delete), `Users` only on `to authenticated`, `Anyone` only on `to anon, authenticated`, no trailing period, ≤ 63 characters. Run `npm test -- supabase` to execute the enforcing test.
 - One policy per operation, each with `to <role>`, using `(select auth.uid())`, correct `using`/`with check` placement (select/delete: using; insert: with check; update: both).
 - Tables meant to be private have a comment saying so and no policies.
 - Indexes exist on every column used in a policy or foreign key.

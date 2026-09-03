@@ -86,27 +86,28 @@ src/
 
 ## Naming
 
-| Thing                   | Convention                                                             | Example                                                 |
-| ----------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------- |
-| Files and folders       | kebab-case                                                             | `login-form.tsx`, `webhook-handlers.ts`                 |
-| React components        | PascalCase export, file kebab-case                                     | `export const LoginForm` in `login-form.tsx`            |
-| Hooks                   | `use-<name>.ts` exporting `use<Name>`                                  | `use-mobile.ts` → `useIsMobile`                         |
-| Functions and variables | camelCase, verbs for functions                                         | `getActiveSubscription`, `formatPrice`                  |
-| Event handlers          | `handle<Event>`                                                        | `handleSubmit`, `handleKeyDown`                         |
-| Booleans                | `is`/`has`/`can` prefix                                                | `isPending`, `hasSubscription`                          |
-| Constants               | UPPER_SNAKE for module-level literals, camelCase for config objects    | `MOBILE_BREAKPOINT`, `siteConfig`                       |
-| Types and interfaces    | PascalCase, no `I` prefix; prefer `type`                               | `ActionResult`, `LoginFormProps`                        |
-| Props type              | `<Component>Props`                                                     | `PricingTableProps`                                     |
-| Zod schemas             | `<thing>Schema`, inferred type `<Thing>Input`                          | `credentialsSchema`, `CredentialsInput`                 |
-| Server Actions          | verb phrase                                                            | `signIn`, `startCheckout`, `openBillingPortal`          |
-| Queries                 | `get<Thing>` / `require<Thing>`                                        | `getUser`, `requireUser`                                |
-| Feature files           | fixed names                                                            | `schemas.ts`, `queries.ts`, `actions.ts`, `components/` |
-| Tests                   | colocated `<file>.test.ts(x)`                                          | `format.test.ts`                                        |
-| Route segments          | kebab-case, groups in parentheses                                      | `auth-code-error/`, `(app)/`                            |
-| SQL                     | snake_case; plural tables, singular columns, `<table_singular>_id` FKs | `subscriptions.user_id`                                 |
-| Enums (Postgres)        | snake_case type, snake_case values                                     | `subscription_status`, `past_due`                       |
-| Env vars                | UPPER_SNAKE; `NEXT_PUBLIC_` only when the browser needs it             | `STRIPE_WEBHOOK_SECRET`                                 |
-| Error codes             | snake_case strings behind `ErrorCode.X`                                | `ErrorCode.NOT_FOUND` = `"not_found"`                   |
+| Thing                   | Convention                                                                                                                               | Example                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Files and folders       | kebab-case                                                                                                                               | `login-form.tsx`, `webhook-handlers.ts`                                       |
+| React components        | PascalCase export, file kebab-case                                                                                                       | `export const LoginForm` in `login-form.tsx`                                  |
+| Hooks                   | `use-<name>.ts` exporting `use<Name>`                                                                                                    | `use-mobile.ts` → `useIsMobile`                                               |
+| Functions and variables | camelCase, verbs for functions                                                                                                           | `getActiveSubscription`, `formatPrice`                                        |
+| Event handlers          | `handle<Event>`                                                                                                                          | `handleSubmit`, `handleKeyDown`                                               |
+| Booleans                | `is`/`has`/`can` prefix                                                                                                                  | `isPending`, `hasSubscription`                                                |
+| Constants               | UPPER_SNAKE for module-level literals, camelCase for config objects                                                                      | `MOBILE_BREAKPOINT`, `siteConfig`                                             |
+| Types and interfaces    | PascalCase, no `I` prefix; prefer `type`                                                                                                 | `ActionResult`, `LoginFormProps`                                              |
+| Props type              | `<Component>Props`                                                                                                                       | `PricingTableProps`                                                           |
+| Zod schemas             | `<thing>Schema`, inferred type `<Thing>Input`                                                                                            | `credentialsSchema`, `CredentialsInput`                                       |
+| Server Actions          | verb phrase                                                                                                                              | `signIn`, `startCheckout`, `openBillingPortal`                                |
+| Queries                 | `get<Thing>` / `require<Thing>`                                                                                                          | `getUser`, `requireUser`                                                      |
+| Feature files           | fixed names                                                                                                                              | `schemas.ts`, `queries.ts`, `actions.ts`, `components/`                       |
+| Tests                   | colocated `<file>.test.ts(x)`                                                                                                            | `format.test.ts`                                                              |
+| Route segments          | kebab-case, groups in parentheses                                                                                                        | `auth-code-error/`, `(app)/`                                                  |
+| SQL                     | snake_case; plural tables, singular columns, `<table_singular>_id` FKs                                                                   | `subscriptions.user_id`                                                       |
+| RLS policies            | `"<Audience> can <verb> <object>"`; verb by operation (view/create/update/delete); ≤ 63 chars; enforced by `supabase/migrations.test.ts` | `"Users can view their own subscriptions"`, `"Anyone can view active prices"` |
+| Enums (Postgres)        | snake_case type, snake_case values                                                                                                       | `subscription_status`, `past_due`                                             |
+| Env vars                | UPPER_SNAKE; `NEXT_PUBLIC_` only when the browser needs it                                                                               | `STRIPE_WEBHOOK_SECRET`                                                       |
+| Error codes             | snake_case strings behind `ErrorCode.X`                                                                                                  | `ErrorCode.NOT_FOUND` = `"not_found"`                                         |
 
 ## Code style
 
