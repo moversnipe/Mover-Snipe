@@ -14,7 +14,8 @@ commands) so AI-assisted changes follow the same conventions as human ones.
 
 - Email + password sign-in and sign-up via Server Actions (`/auth/login`), Zod-validated.
 - PKCE callback (`/auth/callback`) with a sanitized `next` redirect, and an error page.
-- Session refresh and route protection in `src/proxy.ts` driven by `src/config/routes.ts`.
+- Session refresh and route protection in `src/proxy.ts` driven by `src/config/routes.ts`, using `getClaims()` to verify the JWT signature locally against the project's signing keys.
+- Built for Supabase's **publishable/secret API keys** and **asymmetric JWT signing keys**; Edge Functions run with `verify_jwt = false` and authorise in code (`supabase/functions/whoami` is the template).
 - `profiles` table created for every user by a database trigger.
 
 **Billing**
@@ -55,19 +56,17 @@ cp .env.example .env.local
 ### 2. Supabase (local)
 
 ```bash
-npx supabase init      # once; creates supabase/config.toml
+npm run db:signing-key # once; writes the local ES256 signing key to supabase/signing_keys.json (gitignored)
 npm run db:start       # starts Postgres, Auth, Studio, email testing server; prints keys
 npm run db:reset       # applies supabase/migrations/
 ```
 
-Copy the printed **API URL**, **anon key**, and **service_role key** into
-`.env.local`. Then, in `supabase/config.toml`, point auth redirects at the app:
-
-```toml
-[auth]
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
-```
+`supabase/config.toml` is committed and already sets the auth redirect URLs,
+`signing_keys_path`, and `verify_jwt = false` for every Edge Function. Copy the
+printed **API URL** and keys into the env file from step 1: the publishable key
+as `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and the secret key as
+`SUPABASE_SECRET_KEY`. If your CLI version prints only the legacy `anon` and
+`service_role` JWTs, use those in the same variables; the app accepts both.
 
 Email confirmation is **off** in the CLI's default `config.toml`
 (`[auth.email] enable_confirmations = false`), so local sign-up signs the user
@@ -105,6 +104,8 @@ check out with Stripe's test card `4242 4242 4242 4242`.
 | `npm run db:start` / `db:stop` / `db:reset` | Local Supabase stack                                           |
 | `npm run db:migration -- <name>`            | New migration file                                             |
 | `npm run db:types`                          | Regenerate `src/lib/supabase/database.types.ts`                |
+| `npm run db:signing-key`                    | Generate the local JWT signing key (gitignored)                |
+| `npm run functions:serve`                   | Serve Edge Functions locally                                   |
 | `npm run stripe:listen`                     | Forward Stripe webhooks to the dev server                      |
 
 ## Project structure
@@ -136,7 +137,7 @@ src/
 ├── hooks/                      use-mobile.ts
 ├── test/                       Vitest setup
 └── proxy.ts                    Session refresh + route protection
-supabase/migrations/            SQL migrations (profiles, billing, webhook_events)
+supabase/                       config.toml · migrations/ (profiles, billing, webhook_events) · functions/whoami (Edge Function template)
 .claude/                        Claude Code rules, hooks, agents, commands, skills
 .github/                        CI workflow, Dependabot
 ```
@@ -167,21 +168,24 @@ Open the repo in Claude Code and the setup in `.claude/` activates:
 
 All variables are required (see `.env.example`):
 
-| Variable                        | Scope  | Purpose                                           |
-| ------------------------------- | ------ | ------------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`          | public | Absolute origin for auth and Stripe redirect URLs |
-| `NEXT_PUBLIC_SUPABASE_URL`      | public | Supabase project URL                              |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | Supabase anon key (RLS applies)                   |
-| `SUPABASE_SERVICE_ROLE_KEY`     | server | Admin client for webhooks; bypasses RLS           |
-| `STRIPE_SECRET_KEY`             | server | Stripe API key                                    |
-| `STRIPE_WEBHOOK_SECRET`         | server | Signing secret for `/api/webhooks/stripe`         |
+| Variable                               | Scope  | Purpose                                                                                                                       |
+| -------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                 | public | Absolute origin for auth and Stripe redirect URLs                                                                             |
+| `NEXT_PUBLIC_SUPABASE_URL`             | public | Supabase project URL                                                                                                          |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public | Supabase publishable key `sb_publishable_...` (RLS applies; legacy anon JWT accepted for the local stack)                     |
+| `SUPABASE_SECRET_KEY`                  | server | Supabase secret key `sb_secret_...` for the admin client; bypasses RLS (legacy service_role JWT accepted for the local stack) |
+| `STRIPE_SECRET_KEY`                    | server | Stripe API key                                                                                                                |
+| `STRIPE_WEBHOOK_SECRET`                | server | Signing secret for `/api/webhooks/stripe`                                                                                     |
 
 ## Deploying
 
 1. Create a hosted Supabase project and apply the migrations from your machine with `npx supabase link` then `npx supabase db push` (agents are blocked from doing this).
 2. In the Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to your domain and add `https://<your-domain>/auth/callback` to **Redirect URLs**.
-3. In Stripe (live mode) add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` subscribed to: `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, `price.deleted`, `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Use its signing secret as `STRIPE_WEBHOOK_SECRET`.
-4. Set all six environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
+3. Settings → API Keys → **Publishable and secret API keys**: create the keys (they are named `default`). Use them for `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and `SUPABASE_SECRET_KEY`; do not ship the legacy `anon`/`service_role` JWTs.
+4. Settings → JWT Keys: click **Migrate JWT secret**, then **Rotate keys** to the standby ES256 key. After at least the access-token lifetime plus a margin (75 minutes at the default 1 hour), revoke the legacy secret. `getClaims()` picks up the new keys automatically through the JWKS endpoint.
+5. Deploy Edge Functions with `npx supabase functions deploy`; `config.toml` already disables gateway JWT verification for each, and `withSupabase` authorises in code.
+6. In Stripe (live mode) add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` subscribed to: `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, `price.deleted`, `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Use its signing secret as `STRIPE_WEBHOOK_SECRET`.
+7. Set all six environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
 
 ## Learn more
 

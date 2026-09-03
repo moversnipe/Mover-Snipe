@@ -16,7 +16,10 @@ Tailwind CSS 4, shadcn/ui on **Base UI**, **Supabase** (Postgres, Auth, RLS),
 react-hook-form with zod, and Vitest.
 
 Supabase and Stripe are required. `src/lib/env/` validates every variable at
-startup and throws with the missing names.
+startup and throws with the missing names. Supabase runs on **publishable and
+secret API keys** and **asymmetric JWT signing keys**: identity is always taken
+from `getClaims()` (local signature verification), and every Edge Function has
+`verify_jwt = false` with authorisation in code.
 
 ## Commands
 
@@ -33,6 +36,8 @@ startup and throws with the missing names.
 | `npm run db:reset`                | Recreate the local DB and apply `supabase/migrations/`                                                               |
 | `npm run db:migration -- <name>`  | New timestamped migration file                                                                                       |
 | `npm run db:types`                | Regenerate `src/lib/supabase/database.types.ts` from the local DB                                                    |
+| `npm run db:signing-key`          | Generate the local ES256 JWT signing key into `supabase/signing_keys.json` (gitignored)                              |
+| `npm run functions:serve`         | Serve Edge Functions locally (honours `verify_jwt = false` from `config.toml`)                                       |
 | `npm run stripe:listen`           | Stripe CLI: forward webhooks to the dev server                                                                       |
 | `npx shadcn@latest add <name>`    | Add a shadcn/ui component                                                                                            |
 
@@ -41,7 +46,7 @@ startup and throws with the missing names.
 ```
 .claude/                 Claude Code setup: settings.json, hooks/, rules/, agents/, commands/, skills/
 .github/                 CI (lint, type-check, test, build) and Dependabot
-supabase/migrations/     SQL migrations (immutable once merged or applied)
+supabase/                config.toml (signing keys, verify_jwt = false per function), migrations/ (immutable once merged or applied), functions/ (Edge Functions, Deno)
 src/
   app/                   Routes only. Thin pages/layouts; no business logic.
     (marketing)/         Public pages            -> /
@@ -147,6 +152,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 
 ## Supabase (summary; full rules in `.claude/rules/supabase.md` and the `supabase` skill)
 
+- Identity comes from `getClaims()` through `features/auth/queries.ts` (`getUser`, `requireUser`, `getUserOrThrow`) and `lib/supabase/session.ts`; never `getSession()`.
 - `await createClient()` (server) / `createClient()` (browser) run as the user under RLS. `createAdminClient()` bypasses RLS and is used only in `features/billing/customers.ts` and `features/billing/webhook-handlers.ts`.
 - Every table has RLS enabled, one policy per operation and audience, `to <role>`, `(select auth.uid())`, indexes on policy and foreign-key columns. Private tables have no policies and a comment saying so.
 - Migrations are immutable once on `main` or applied to any database. After adding one: `npm run db:reset`, `npm run db:types`, commit both.
@@ -175,15 +181,17 @@ helpers ship with tests. See `.claude/rules/tests.md`.
 ## Environment variables
 
 All required; see `.env.example`. Public: `NEXT_PUBLIC_SITE_URL`,
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Server-only:
-`SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`.
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+(`sb_publishable_...`). Server-only: `SUPABASE_SECRET_KEY` (`sb_secret_...`),
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Legacy `anon`/`service_role` JWTs
+are tolerated for the local CLI stack only.
 Never read, print, or write `.env.local`; hooks block it. Document new
 variables in `.env.example` and ask the user to set them.
 
 ## Security rules (always)
 
 1. Validate on the server with Zod; client validation is UX only.
-2. Authenticate inside every action and protected handler with `getUser()`; the proxy and layout are defence in depth, not the check.
+2. Authenticate inside every action and protected handler with `getUser()`, which verifies the JWT signature via `getClaims()`; the proxy and layout are defence in depth, not the check.
 3. Authorise via RLS with the user's client; never widen a query with the admin client to "make it work".
 4. Sanitize user-supplied redirect targets with `sanitizeNextPath`.
 5. Verify webhook signatures on the raw body before touching the payload.
@@ -206,7 +214,7 @@ variables in `.env.example` and ask the user to set them.
   - `guard-bash.sh` (PreToolUse Bash) — blocks remote Supabase ops, force pushes, deleting migrations, reading secret env files.
   - `check-file.sh` (PostToolUse Edit/Write) — Prettier-formats the file and fails the tool call on ESLint errors.
   - `stop-check.sh` (Stop) — refuses to finish a turn while `tsc --noEmit` fails on changed TypeScript.
-- **Rules** (`.claude/rules/`, path-scoped): `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `stripe`, `tests`.
+- **Rules** (`.claude/rules/`, path-scoped): `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `edge-functions`, `stripe`, `tests`.
 - **Agents** (`.claude/agents/`, read-only reviewers): `code-reviewer`, `database-reviewer`, `security-reviewer`. Run them before committing non-trivial work.
 - **Commands** (`.claude/commands/`): `/add-feature`, `/add-migration`, `/add-endpoint`, `/add-component`, `/review`.
 - **Skills** (`.claude/skills/`): `frontend-design`, `supabase`, `vercel-react-best-practices`, `improve`, `agent-browser` (needs the `agent-browser` CLI installed).

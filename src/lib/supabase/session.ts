@@ -23,7 +23,7 @@ export const updateSession = async (request: NextRequest) => {
 
   const supabase = createServerClient<Database>(
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-    clientEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    clientEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookies: {
         getAll() {
@@ -42,15 +42,19 @@ export const updateSession = async (request: NextRequest) => {
     }
   )
 
-  // Do not run code between createServerClient and auth.getUser(); it can
+  // Do not run code between createServerClient and auth.getClaims(); it can
   // desynchronise cookies and randomly log users out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  //
+  // getClaims() verifies the access token's signature locally against the
+  // project's JWT signing keys (JWKS, cached), refreshing the session first if
+  // it is about to expire. No Auth-server round-trip on the hot path. With the
+  // legacy symmetric JWT secret it falls back to a server-side check.
+  const { data, error } = await supabase.auth.getClaims()
+  const isSignedIn = !error && data !== null
 
   const { pathname } = request.nextUrl
 
-  if (!user && !isPublicPath(pathname)) {
+  if (!isSignedIn && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = ROUTES.login
     url.search = ""
@@ -58,7 +62,7 @@ export const updateSession = async (request: NextRequest) => {
     return NextResponse.redirect(url)
   }
 
-  if (user && pathname === ROUTES.login) {
+  if (isSignedIn && pathname === ROUTES.login) {
     const url = request.nextUrl.clone()
     url.pathname = DEFAULT_AUTHENTICATED_PATH
     url.search = ""

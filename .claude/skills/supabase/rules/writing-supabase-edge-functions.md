@@ -4,7 +4,7 @@ description: Guidelines for writing Supabase Edge Functions
 
 # Writing Supabase Edge Functions
 
-Apply these rules whenever you write a Supabase Edge Function under `supabase/functions/`.
+Apply these rules whenever you write a Supabase Edge Function under `supabase/functions/`. In this repository `.claude/rules/edge-functions.md` takes precedence: every function sets `verify_jwt = false` and authorises with `withSupabase({ auth })` from `npm:@supabase/server`, reading keys from `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS` (never `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY`).
 
 ## Guidelines
 

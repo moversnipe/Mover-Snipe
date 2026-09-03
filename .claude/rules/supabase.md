@@ -21,6 +21,13 @@ requirements.
 - After writing a migration: `npm run db:reset` (local stack) then `npm run db:types`, and commit the regenerated `database.types.ts` with the migration.
 - Applying migrations to a hosted project is the user's manual step; agents never run it.
 
+## Keys, signing keys, and identity
+
+- API keys: the browser gets the **publishable key** (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `sb_publishable_...`), the server the **secret key** (`SUPABASE_SECRET_KEY`, `sb_secret_...`). The legacy `anon`/`service_role` JWTs are accepted by the env schema for the local CLI stack only; never introduce new code paths that depend on them, and never send a publishable or secret key on `Authorization: Bearer`.
+- JWTs are signed with **asymmetric signing keys** (ES256). Locally `config.toml` points `signing_keys_path` at the gitignored `supabase/signing_keys.json` (`npm run db:signing-key`). Hosted projects migrate on the dashboard JWT keys page: migrate the JWT secret, then rotate to the standby key, then revoke the legacy secret after the access-token lifetime.
+- Identity is always `supabase.auth.getClaims()`: it verifies the signature locally against the JWKS. `getSession()` is never used for identity (unverified cookies). `supabase.auth.getUser()` is reserved for when the fresh user record itself is needed.
+- `src/features/auth/queries.ts` (`getUser`, `requireUser`, `getUserOrThrow`) and `src/lib/supabase/session.ts` are the only places that call the auth API for identity.
+
 ## Clients (`src/lib/supabase/`)
 
 - Server Components/Actions/Handlers: `await createClient()` from `server.ts`.

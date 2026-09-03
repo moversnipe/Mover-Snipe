@@ -7,3 +7,4 @@ package-lock.json
 next-env.d.ts
 src/lib/supabase/database.types.ts
 supabase/.temp
+supabase/functions

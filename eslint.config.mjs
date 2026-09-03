@@ -20,6 +20,7 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "src/lib/supabase/database.types.ts",
+      "supabase/functions/**",
     ],
   },
 ]

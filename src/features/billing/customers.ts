@@ -1,7 +1,6 @@
 import "server-only"
 
-import type { User } from "@supabase/supabase-js"
-
+import type { SessionUser } from "@/features/auth/queries"
 import { AppError, ErrorCode } from "@/lib/errors"
 import { logger } from "@/lib/logger"
 import { stripe } from "@/lib/stripe/server"
@@ -14,7 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
  * Uses the admin client because `customers` has no client RLS policies.
  */
 export const getOrCreateStripeCustomerId = async (
-  user: Pick<User, "id" | "email">
+  user: SessionUser
 ): Promise<string> => {
   const admin = createAdminClient()
 

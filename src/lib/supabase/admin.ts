@@ -7,16 +7,18 @@ import { serverEnv } from "@/lib/env/server"
 import type { Database } from "@/lib/supabase/database.types"
 
 /**
- * Service-role client. BYPASSES RLS.
+ * Secret-key (service role) client. BYPASSES RLS.
  *
  * Use only in trusted server code that acts on behalf of the system, such as
  * webhook handlers. It carries no user session on purpose: never pass user
  * cookies to it, and never let its results flow to the client unfiltered.
+ * Supabase rejects secret keys sent from a browser User-Agent, and this module
+ * is `server-only`, so it can never reach the client bundle.
  */
 export const createAdminClient = () =>
   createSupabaseClient<Database>(
     clientEnv.NEXT_PUBLIC_SUPABASE_URL,
-    serverEnv.SUPABASE_SERVICE_ROLE_KEY,
+    serverEnv.SUPABASE_SECRET_KEY,
     {
       auth: {
         autoRefreshToken: false,

@@ -7,16 +7,29 @@ import { ROUTES } from "@/config/routes"
 import { AppError, ErrorCode } from "@/lib/errors"
 import { createClient } from "@/lib/supabase/server"
 
+/** Identity established from verified JWT claims. */
+export type SessionUser = {
+  id: string
+  email: string | undefined
+}
+
 /**
- * Current user or null. Wrapped in React.cache so several Server Components in
- * one request share a single auth round-trip.
+ * Current user identity or null, from the access token's verified claims.
+ *
+ * getClaims() checks the signature against the project's JWT signing keys
+ * locally (JWKS, cached) and only falls back to the Auth server when the
+ * project still uses the legacy symmetric secret. Never use getSession() for
+ * identity: it reads cookies without verifying them. Use supabase.auth.getUser()
+ * only when you need the fresh user record itself, not just the identity.
+ *
+ * Wrapped in React.cache so several Server Components in one request share
+ * one verification.
  */
-export const getUser = cache(async () => {
+export const getUser = cache(async (): Promise<SessionUser | null> => {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  return user
+  const { data, error } = await supabase.auth.getClaims()
+  if (error || !data) return null
+  return { id: data.claims.sub, email: data.claims.email }
 })
 
 /** Current user, or redirect to login. Use in protected layouts and actions. */

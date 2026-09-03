@@ -44,3 +44,5 @@ next-env.d.ts
 
 .claude/settings.local.json
 .claude/worktrees/
+# Local JWT signing key (see supabase/config.toml). Never commit.
+supabase/signing_keys.json

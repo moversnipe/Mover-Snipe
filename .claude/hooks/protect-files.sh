@@ -41,8 +41,8 @@ case "$base" in
     echo "Blocked: '$rel' holds secrets. Document the variable in .env.example and ask the user to set it." >&2
     exit 2
     ;;
-  *.pem|*.key)
-    echo "Blocked: '$rel' looks like key material. Never write credentials into the repo." >&2
+  *.pem|*.key|signing_keys*.json)
+    echo "Blocked: '$rel' is key material (private JWT signing keys or certificates). Never write credentials into the repo; the user generates them locally." >&2
     exit 2
     ;;
 esac

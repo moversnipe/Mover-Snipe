@@ -6,9 +6,20 @@ import { z } from "zod"
  * Server-only environment variables. Importing this module from a Client
  * Component is a build error thanks to `server-only`, which keeps secrets out
  * of the browser bundle.
+ *
+ * The Supabase key is a secret key (`sb_secret_...`), which bypasses RLS. The
+ * legacy `service_role` JWT is accepted too for the local CLI stack.
  */
+const supabaseSecretKey = z
+  .string()
+  .min(1)
+  .refine(
+    (key) => key.startsWith("sb_secret_") || key.startsWith("eyJ"),
+    "Expected a secret key (sb_secret_...) or legacy service_role JWT"
+  )
+
 const serverEnvSchema = z.object({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  SUPABASE_SECRET_KEY: supabaseSecretKey,
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
 })
