@@ -81,7 +81,8 @@ Reference these guidelines when:
 
 - Use `Deno.serve()` not deprecated serve import
 - Prefix imports: `npm:`, `jsr:`, or `node:`
-- Pre-populated env vars: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_DB_URL
+- Pre-populated env vars: SUPABASE_URL, SUPABASE_PUBLISHABLE_KEYS, SUPABASE_SECRET_KEYS, SUPABASE_JWKS, SUPABASE_DB_URL
+- The two key vars hold a JSON object keyed by key name, not a plain string: `JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS')!)['default']`. Never read the legacy SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY — `supabase/functions.test.ts` fails CI on either. In this repository `.claude/rules/edge-functions.md` takes precedence: functions get their keys from `withSupabase` rather than reading these directly
 - Shared code goes in `supabase/functions/_shared/`
 
 ## How to Use

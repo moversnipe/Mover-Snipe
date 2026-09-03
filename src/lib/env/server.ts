@@ -9,6 +9,11 @@ import { z } from "zod"
  *
  * The Supabase key is a secret key (`sb_secret_...`), which bypasses RLS. The
  * legacy `service_role` JWT is accepted too for the local CLI stack.
+ *
+ * This holds ONE key's value. Edge Functions receive every secret key at once in
+ * the platform's `SUPABASE_SECRET_KEYS` JSON object (see
+ * `.claude/rules/edge-functions.md`); when copying from there, take the
+ * `default` entry's value rather than the object itself.
  */
 const supabaseSecretKey = z
   .string()

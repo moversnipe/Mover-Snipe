@@ -184,7 +184,10 @@ All required; see `.env.example`. Public: `NEXT_PUBLIC_SITE_URL`,
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 (`sb_publishable_...`). Server-only: `SUPABASE_SECRET_KEY` (`sb_secret_...`),
 `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Legacy `anon`/`service_role` JWTs
-are tolerated for the local CLI stack only.
+are tolerated for the local CLI stack only. Each Supabase variable holds a single
+key's value; the platform's `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS`
+JSON objects are Edge Function runtime variables only, never app env vars (see
+`.claude/rules/edge-functions.md`).
 Never read, print, or write `.env.local`; hooks block it. Document new
 variables in `.env.example` and ask the user to set them.
 
