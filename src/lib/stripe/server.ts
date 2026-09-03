@@ -11,7 +11,7 @@ import { serverEnv } from "@/lib/env/server"
 export const stripe = new Stripe(serverEnv.STRIPE_SECRET_KEY, {
   typescript: true,
   appInfo: {
-    name: "nextjs-supabase-stripe-boilerplate",
+    name: "mover-snipe",
     url: "https://github.com/moversnipe/mover-snipe",
   },
 })

@@ -1,9 +1,9 @@
 import { clientEnv } from "@/lib/env/client"
 
 export const siteConfig = {
-  name: "Next.js Supabase Stripe Boilerplate",
+  name: "Mover Snipe",
   description:
-    "Next.js 16 + React 19 + Supabase + Stripe + shadcn/ui (Base UI) starter",
+    "Next.js 16 + React 19 + Supabase + Stripe + shadcn/ui (Base UI)",
   url: clientEnv.NEXT_PUBLIC_SITE_URL,
 } as const
 
