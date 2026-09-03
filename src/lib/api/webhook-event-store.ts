@@ -2,10 +2,7 @@ import "server-only"
 
 import type { WebhookEventKey, WebhookEventStore } from "@/lib/api/idempotency"
 import { createAdminClient } from "@/lib/supabase/admin"
-
-const throwIfError = (error: { message: string } | null, context: string) => {
-  if (error) throw new Error(`${context}: ${error.message}`)
-}
+import { throwIfError } from "@/lib/supabase/errors"
 
 /**
  * Supabase-backed WebhookEventStore over public.webhook_events.

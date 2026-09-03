@@ -66,7 +66,7 @@ src/
     actions/result.ts    ActionResult contract for Server Actions (ok/fail/fieldError/formError)
     api/                 handler.ts (createHandler), validate.ts, response.ts, idempotency.ts + webhook-event-store.ts (runOnce ledger)
     logger.ts            Structured JSON logger
-    supabase/            client.ts, server.ts, admin.ts, session.ts, database.types.ts
+    supabase/            client.ts, server.ts, admin.ts, session.ts, errors.ts, database.types.ts
     stripe/              server.ts (SDK instance), webhooks.ts (signature verification)
   hooks/                 Client hooks (use-*.ts)
   test/                  Vitest setup and the server-only stub
@@ -159,6 +159,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 - Every table has RLS enabled, one policy per operation and audience, `to <role>`, `(select auth.uid())`, indexes on policy and foreign-key columns. Private tables have no policies and a comment saying so.
 - Migrations are immutable once on `main` or applied to any database. After adding one: `npm run db:reset`, `npm run db:types`, commit both.
 - Explicit column lists in every `select`.
+- In queries, a failed result goes through `throwIfError(error, "<context>")` from `lib/supabase/errors.ts`; actions return a failed `ActionResult` and integration helpers throw `AppError` with `cause`. `postgrest-js` returns a plain object at runtime even though it is typed as `PostgrestError extends Error`, so `throw error` loses the stack and Next.js reports it as a bare `@E394` digest with no application frames. Auth errors are real `Error`s and need none of this.
 
 ## Stripe (summary; full rules in `.claude/rules/stripe.md`)
 
@@ -230,7 +231,8 @@ variables in `.env.example` and ask the user to set them.
 ## Never
 
 `any` · `asChild` · Radix imports · SWR · `postgres_changes` · `select("*")` ·
-inline route strings · `process.env` outside `src/lib/env/` and the test
+inline route strings · `throw error` on a postgrest-js result ·
+`process.env` outside `src/lib/env/` and the test
 bootstrap · `console.*` in app code (outside `logger.ts`) · editing
 `src/components/ui/` by hand (except commented fixes) · editing a committed
 migration · writing to Stripe mirror tables outside the webhook · documenting
