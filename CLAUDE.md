@@ -153,7 +153,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 ## Supabase (summary; full rules in `.claude/rules/supabase.md` and the `supabase` skill)
 
 - Identity comes from `getClaims()` through `features/auth/queries.ts` (`getUser`, `requireUser`, `getUserOrThrow`) and `lib/supabase/session.ts`; never `getSession()`.
-- `await createClient()` (server) / `createClient()` (browser) run as the user under RLS. `createAdminClient()` bypasses RLS and is used only in `features/billing/customers.ts` and `features/billing/webhook-handlers.ts`.
+- `await createClient()` (server) / `createClient()` (browser) run as the user under RLS. `createAdminClient()` bypasses RLS and is used only in `features/billing/customers.ts`, `features/billing/webhook-handlers.ts`, and `lib/api/webhook-event-store.ts` (the idempotency ledger).
 - Every table has RLS enabled, one policy per operation and audience, `to <role>`, `(select auth.uid())`, indexes on policy and foreign-key columns. Private tables have no policies and a comment saying so.
 - Migrations are immutable once on `main` or applied to any database. After adding one: `npm run db:reset`, `npm run db:types`, commit both.
 - Explicit column lists in every `select`.
@@ -209,7 +209,7 @@ variables in `.env.example` and ask the user to set them.
 - **`.claude/settings.json`** — allowlist for the npm/npx/git commands above; denies reading the secret env files by name (`.env`, `.env.local`, `.env.<stage>`, `.env.*.local`) plus `*.pem`/`*.key`, and denies remote Supabase pushes/resets and force pushes. The deny list is an enumeration, not a glob, so that `.env.example` stays readable.
 - Hooks are **guardrails, not a sandbox**: they catch the mistakes an agent is likely to make and fail closed when they cannot parse their input, but a shell blocklist cannot enumerate every way to read a file. The real controls are that secrets are never committed (`.gitignore`), the Read-tool deny rules, RLS, and human review of the diff.
 - **Hooks** (`.claude/hooks/`, wired to events in `settings.json`):
-  - `_json.sh` — not wired to an event; sourced by the others to read one field out of the hook's JSON stdin. Returns a sentinel when `node` is missing or the payload will not parse, so callers fail closed.
+  - `_json.sh` — not wired to an event; sourced by the others to read one field out of the hook's JSON stdin. Returns a sentinel when `node` is missing or the payload will not parse; the two PreToolUse guards check for it and fail closed, the formatter and stop hooks treat it as "nothing to do".
   - `session-start.sh` — installs deps if `node_modules` is missing, warns if the local env file is absent.
   - `protect-files.sh` (PreToolUse Edit/Write) — blocks edits to `.env*` secrets, `package-lock.json`, and migrations already on `origin/main` (or `HEAD` if that ref is missing).
   - `guard-bash.sh` (PreToolUse Bash) — blocks remote Supabase ops, force pushes, deleting migrations, reading secret env files.
