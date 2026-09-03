@@ -1,15 +1,15 @@
 import { z } from "zod"
 
-const emailField = z.email("Enter a valid email address")
+const emailSchema = z.email("Enter a valid email address")
 
-const passwordField = z
+const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
 
 /** Sign-in: what the user types on /auth/login. */
 export const credentialsSchema = z.object({
-  email: emailField,
-  password: passwordField,
+  email: emailSchema,
+  password: passwordSchema,
 })
 
 export type CredentialsInput = z.infer<typeof credentialsSchema>
@@ -17,8 +17,8 @@ export type CredentialsInput = z.infer<typeof credentialsSchema>
 /** Sign-up: credentials plus a confirmation of the chosen password. */
 export const signUpSchema = z
   .object({
-    email: emailField,
-    password: passwordField,
+    email: emailSchema,
+    password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((values) => values.password === values.confirmPassword, {
@@ -29,14 +29,14 @@ export const signUpSchema = z
 export type SignUpInput = z.infer<typeof signUpSchema>
 
 /** Forgot password: only the address the recovery link is sent to. */
-export const forgotPasswordSchema = z.object({ email: emailField })
+export const forgotPasswordSchema = z.object({ email: emailSchema })
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 
 /** Update password: the new password, typed twice. */
 export const updatePasswordSchema = z
   .object({
-    password: passwordField,
+    password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((values) => values.password === values.confirmPassword, {

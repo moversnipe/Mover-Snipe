@@ -128,7 +128,9 @@ export const requestPasswordReset = async (
 
 /**
  * Sets a new password for the signed-in user. Reached from the recovery link,
- * which establishes a session before this page is rendered.
+ * which establishes a session before this page is rendered. Supabase's
+ * `secure_password_change` decides whether an older session is still allowed to
+ * do this; every other session is revoked once the password changes.
  */
 export const updatePassword = async (
   _prev: AuthActionResult | undefined,
@@ -154,10 +156,29 @@ export const updatePassword = async (
   })
   if (error) {
     logger.warn("Password update failed", { code: error.code, userId: user.id })
+    // secure_password_change lets Supabase reject a session that is no longer
+    // fresh; that is a different fix for the user than a rejected password.
+    if (error.code === "reauthentication_needed") {
+      return fail(
+        ErrorCode.UNAUTHENTICATED,
+        "For security, sign in again before changing your password."
+      )
+    }
     return fail(
       ErrorCode.VALIDATION,
       "Could not update the password. Choose a different one and try again."
     )
+  }
+
+  // Drop every other session so a stolen cookie cannot outlive the reset.
+  const { error: signOutError } = await supabase.auth.signOut({
+    scope: "others",
+  })
+  if (signOutError) {
+    logger.warn("Could not revoke other sessions after password update", {
+      code: signOutError.code,
+      userId: user.id,
+    })
   }
 
   revalidatePath(ROUTES.home, "layout")

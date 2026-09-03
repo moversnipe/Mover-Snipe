@@ -12,7 +12,6 @@ export const ROUTES = {
   forgotPassword: "/auth/forgot-password",
   updatePassword: "/auth/update-password",
   authCallback: "/auth/callback",
-  authConfirm: "/auth/confirm",
   authError: "/auth/auth-code-error",
   dashboard: "/dashboard",
   billing: "/billing",
@@ -36,7 +35,6 @@ const PUBLIC_PATHS: readonly string[] = [
   ROUTES.signUpSuccess,
   ROUTES.forgotPassword,
   ROUTES.authCallback,
-  ROUTES.authConfirm,
   ROUTES.authError,
   ROUTES.api.health,
   ROUTES.api.stripeWebhook,
@@ -44,8 +42,8 @@ const PUBLIC_PATHS: readonly string[] = [
 
 /**
  * Auth pages that only make sense for anonymous visitors. A signed-in user who
- * lands on one is sent to the app instead. `authCallback`, `authConfirm` and
- * `updatePassword` are excluded on purpose: each is reached *with* a session.
+ * lands on one is sent to the app instead. `authCallback` and `updatePassword`
+ * are excluded on purpose: each is reached *with* a session.
  */
 const AUTH_ENTRY_PATHS: readonly string[] = [
   ROUTES.login,

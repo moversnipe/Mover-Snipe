@@ -51,7 +51,7 @@ src/
   app/                   Routes only. Thin pages/layouts; no business logic.
     (marketing)/         Public pages            -> /
     (app)/               Signed-in pages         -> /dashboard, /billing (layout calls requireUser)
-    auth/                Shared layout, login, sign-up (+ success), forgot/update password, PKCE callback, token_hash confirm, auth error page
+    auth/                Shared layout, login, sign-up (+ success), forgot/update password, PKCE callback, auth error page
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
@@ -138,7 +138,8 @@ src/
 `"use server"` file → Zod validation → `getUser()` → RLS-scoped work → return
 `ok()`/`fail()`/`failValidation()`/`failFromError()` from `src/lib/actions/result.ts`
 → `revalidatePath` → `redirect()` outside `try/catch`. Client binds with
-`useActionState(action, undefined)` and reads `fieldError(state, "field")`.
+`useActionState(action, undefined)`, reads `fieldError(state, "field")` under
+inputs and `formError(state)` for the form-level line.
 `useFormStatus()` is the correct hook for pending state in child submit buttons.
 Redirect-only, input-less actions such as `signOut` may return `Promise<void>`.
 Error messages returned to users are fixed strings; provider messages are logged, never forwarded.

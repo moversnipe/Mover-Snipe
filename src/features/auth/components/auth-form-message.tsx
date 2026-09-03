@@ -1,5 +1,3 @@
-"use client"
-
 import type { AuthActionResult } from "@/features/auth/actions"
 import { FieldError } from "@/components/ui/field"
 import { formError } from "@/lib/actions/result"

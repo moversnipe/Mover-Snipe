@@ -12,7 +12,6 @@ describe("isPublicPath", () => {
     expect(isPublicPath(ROUTES.signUp)).toBe(true)
     expect(isPublicPath(ROUTES.signUpSuccess)).toBe(true)
     expect(isPublicPath(ROUTES.forgotPassword)).toBe(true)
-    expect(isPublicPath(ROUTES.authConfirm)).toBe(true)
     expect(isPublicPath(`${ROUTES.authCallback}/anything`)).toBe(true)
   })
 
@@ -41,7 +40,6 @@ describe("isAuthEntryPath", () => {
 
   it("leaves the paths that are reached with a session alone", () => {
     expect(isAuthEntryPath(ROUTES.authCallback)).toBe(false)
-    expect(isAuthEntryPath(ROUTES.authConfirm)).toBe(false)
     expect(isAuthEntryPath(ROUTES.updatePassword)).toBe(false)
     expect(isAuthEntryPath(ROUTES.authError)).toBe(false)
   })
