@@ -22,14 +22,15 @@ AI-assisted changes follow the same conventions as human ones.
 
 - `products`, `prices`, `subscriptions`, `customers` tables mirrored from Stripe by the webhook at `/api/webhooks/stripe`.
 - `webhook_events` idempotency ledger: every webhook (Stripe or a future provider) is processed at most once per event id; replays, concurrent deliveries, and retries after failure are handled by an atomic claim function.
-- `/billing`: pricing table from the database, Stripe Checkout, Customer Portal.
-- `/dashboard`: profile and current subscription.
+- The checkout and portal UI — pricing table, `startCheckout`, `openBillingPortal`, and the subscription summary — lives in `src/features/billing/`, but no page mounts it yet: `/billing` and `/dashboard` are placeholders like the rest of the app. Compose those components into a page when the billing screens are designed.
 
 **App shell**
 
-- Collapsible shadcn/ui sidebar over every signed-in page, driven by `NAV_SECTIONS` in `src/config/navigation.ts`: Dashboard on its own, then **Pipeline** (Listings, Prospects), **Outreach** (Templates, Campaigns, Mails), and **Account** (Billing, Settings).
+- Collapsible shadcn/ui sidebar over every signed-in page in the `inset` style — the page wrapper takes the sidebar colour so the rail reads as background rather than a panel, and the content floats on it as one rounded card. Driven by `NAV_SECTIONS` in `src/config/navigation.ts`: Dashboard on its own, then **Pipeline** (Listings, Prospects), **Outreach** (Templates, Campaigns, Mails), and **Account** (Billing, Settings).
+- The signed-in account sits at the foot of the sidebar — avatar, name, email — and its menu owns the theme choice and sign-out. Collapsed to icon width it shows the avatar alone.
 - The active entry is derived from the current path, so a nested page such as `/listings/<id>` keeps Listings selected, and the header breadcrumb names the section and page.
-- Open/collapsed state persists in the `sidebar_state` cookie and is read back in `(app)/layout.tsx`, so the first server render matches what the user last chose. Toggle with the header button, the rail, or `Ctrl`/`Cmd` + `B`.
+- Open/collapsed state persists in the `sidebar_state` cookie and is read back in `(app)/layout.tsx`, so the first server render matches what the user last chose. Toggle with the header button or `Ctrl`/`Cmd` + `B`. The vendored `SidebarRail` is deliberately left out: it dresses the sidebar edge with a hover highlight and a `cursor-w-resize`, which promises a drag it does not implement — it only toggles on click.
+- Geist and Geist Mono via `next/font`, with the variable classes on `<html>` — the element `globals.css` applies `font-sans` to. A custom property is only visible to the declaring element and its descendants, so declaring them lower down leaves that `var()` undefined and silently drops the face.
 
 **Foundation**
 
@@ -87,7 +88,7 @@ show up there too. Restart the stack after editing `config.toml`
 1. Put your test secret key in `.env.local` as `STRIPE_SECRET_KEY`.
 2. In a second terminal run `npm run stripe:listen` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`.
 3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
-4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `createBillingPortalSession` can create sessions).
+4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `createBillingPortalSession` can create sessions, once a page mounts the portal button).
 
 ### 4. Run
 
@@ -95,8 +96,11 @@ show up there too. Restart the stack after editing `config.toml`
 npm run dev
 ```
 
-Open http://localhost:3000, create an account, then visit `/billing` and
-check out with Stripe's test card `4242 4242 4242 4242`.
+Open http://localhost:3000 and create an account. To verify the Stripe half
+end to end, keep `npm run stripe:listen` running and create or edit a product
+with a recurring price in the Stripe Dashboard: the webhook writes it to
+`products`/`prices`. There is no checkout screen to click through yet — see
+the Billing note above.
 
 ## Scripts
 
@@ -133,7 +137,7 @@ src/
 │   ├── api/                    health/, webhooks/stripe/
 │   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
 ├── features/                   Domain modules
-│   ├── auth/                   schemas · queries · actions · password · redirect · components/
+│   ├── auth/                   schemas · queries · actions · account · password · redirect · components/
 │   └── billing/                schemas · queries · actions · checkout · customers · webhook-handlers · enums · format · components/
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI

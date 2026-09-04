@@ -1,37 +1,67 @@
 "use client"
 
-import { Moon, Sun } from "lucide-react"
+import { Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-export const ThemeToggle = () => {
-  const { setTheme } = useTheme()
+const THEME_OPTIONS = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+] as const
+
+/**
+ * The three theme choices as radio items, so the active one carries a tick.
+ *
+ * Shared by the standalone toggle below and the account menu in the sidebar
+ * footer, so the two never drift apart. `useTheme` types `theme` as optional
+ * and Base UI locks controlled-ness on first render, so a `value` of
+ * `undefined` would leave the group uncontrolled for good; it takes a concrete
+ * default rather than the bare value.
+ */
+export const ThemeMenuItems = () => {
+  const { theme, setTheme } = useTheme()
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="icon" />}>
-        <Sun className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-        <Moon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-        <span className="sr-only">Toggle theme</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          Light
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          Dark
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          System
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <DropdownMenuRadioGroup
+      value={theme ?? "system"}
+      onValueChange={(value: string) => setTheme(value)}
+    >
+      {/*
+        Inside the group, not beside it: this maps to Base UI's `GroupLabel`,
+        which throws without a group ancestor and names the radio group for
+        assistive technology.
+      */}
+      <DropdownMenuLabel>Theme</DropdownMenuLabel>
+      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+        <DropdownMenuRadioItem key={value} value={value}>
+          <Icon aria-hidden="true" />
+          {label}
+        </DropdownMenuRadioItem>
+      ))}
+    </DropdownMenuRadioGroup>
   )
 }
+
+/** Icon-button theme switcher for the pages that sit outside the app shell. */
+export const ThemeToggle = () => (
+  <DropdownMenu>
+    <DropdownMenuTrigger render={<Button variant="outline" size="icon" />}>
+      <Sun className="size-4 scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
+      <Moon className="absolute size-4 scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
+      <span className="sr-only">Toggle theme</span>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <ThemeMenuItems />
+    </DropdownMenuContent>
+  </DropdownMenu>
+)

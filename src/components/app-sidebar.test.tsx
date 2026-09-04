@@ -13,9 +13,9 @@ vi.mock("next/navigation", () => ({
 
 const renderSidebar = (currentPath: string) => {
   pathname.mockReturnValue(currentPath)
-  render(
+  return render(
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar footer={<span>Account card</span>} />
     </SidebarProvider>
   )
 }
@@ -68,11 +68,24 @@ describe("AppSidebar", () => {
   })
 
   it("keeps the parent entry current on a nested path", () => {
-    renderSidebar("/listings/some-listing")
+    renderSidebar(`${ROUTES.listings}/some-listing`)
 
     expect(screen.getByRole("link", { name: "Listings" })).toHaveAttribute(
       "aria-current",
       "page"
     )
+  })
+  it("mounts the footer it is handed", () => {
+    renderSidebar(ROUTES.dashboard)
+
+    expect(screen.getByText("Account card")).toBeInTheDocument()
+  })
+
+  it("leaves out the rail, which invites a drag it does not support", () => {
+    renderSidebar(ROUTES.dashboard)
+
+    // By role, not slot: `SidebarRail` renders a button labelled this way, so
+    // the check still means something if shadcn renames its internals.
+    expect(screen.queryByRole("button", { name: "Toggle Sidebar" })).toBeNull()
   })
 })

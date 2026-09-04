@@ -10,6 +10,7 @@ import { siteConfig } from "@/config/site"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -17,14 +18,25 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
 } from "@/components/ui/sidebar"
 
-export const AppSidebar = () => {
+type AppSidebarProps = {
+  /**
+   * Pinned to the bottom of the rail. Passed in rather than imported so this
+   * stays domain-free: the account card belongs to the auth feature.
+   */
+  footer: React.ReactNode
+}
+
+export const AppSidebar = ({ footer }: AppSidebarProps) => {
   const pathname = usePathname()
 
+  // `inset` paints the page wrapper in the sidebar colour via
+  // `has-data-[variant=inset]`, so the rail reads as part of the background
+  // rather than a panel against it, and the paired `SidebarInset` becomes a
+  // rounded content card floating on top.
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar variant="inset" collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -41,7 +53,16 @@ export const AppSidebar = () => {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      {/*
+        `base-nova` ships `gap-0` on the content column and every menu, which
+        leaves entries flush against each other. One rhythm, 4px, applied to
+        both: the group labels already give expanded sections their separation,
+        and they collapse to nothing in icon mode, so the same gap reads as
+        evenly spaced icons there without anything having to change between
+        states. Groups drop their vertical padding for the same reason — kept,
+        it would strand collapsed icons far apart from their neighbours.
+      */}
+      <SidebarContent className="gap-1">
         {/*
           The vendored sidebar renders plain `div`/`ul` elements, so the app
           would otherwise have no navigation landmark. `contents` keeps this
@@ -49,12 +70,12 @@ export const AppSidebar = () => {
         */}
         <nav aria-label="Main" className="contents">
           {NAV_SECTIONS.map((section) => (
-            <SidebarGroup key={section.label ?? "overview"}>
+            <SidebarGroup key={section.label ?? "overview"} className="py-0">
               {section.label ? (
                 <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
               ) : null}
               <SidebarGroupContent>
-                <SidebarMenu>
+                <SidebarMenu className="gap-1">
                   {section.items.map((item) => {
                     const isActive = isNavItemActive(pathname, item.href)
 
@@ -79,7 +100,7 @@ export const AppSidebar = () => {
         </nav>
       </SidebarContent>
 
-      <SidebarRail />
+      <SidebarFooter>{footer}</SidebarFooter>
     </Sidebar>
   )
 }
