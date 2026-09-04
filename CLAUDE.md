@@ -97,8 +97,10 @@ Later stages add an in-app AI chat and an MCP server. Neither exists yet and
 neither is scaffolded now, but every process, endpoint, and table built before
 then must be callable by a non-human caller without a rewrite.
 
-- One capability is one named, exported, typed function in `src/features/<domain>/`. Forms, Route Handlers, and future chat tools are thin adapters over it; nothing important lives only inside a component or a `route.ts`.
+- One capability is one named, exported, typed function in `src/features/<domain>/`. Forms, Route Handlers, and future chat tools are thin adapters over it; nothing important lives only inside a component or a `route.ts`. Split a feature's `queries.ts`/`actions.ts` by concept once it stops being readable in one pass.
 - Input is one Zod object from `schemas.ts` (`.describe()` the fields whose meaning is not obvious from the name); output is JSON-serialisable data. `FormData` and `Request` stay in the adapter.
+- Returned rows explain themselves: full words, database enum values, UTC timestamps, amounts in minor units beside their currency, `null` for absent rather than a sentinel. Formatting for humans happens at render time.
+- One word per concept across the database, TypeScript, Zod, and the UI (allowing only for `snake_case` vs `camelCase`). A rename crosses every layer in one commit or does not happen.
 - Every exported capability opens with a one-line doc comment: what it does, who may call it, what it returns, whether it writes. That line is its future tool description.
 - Contracts stay stable and enumerable: `ROUTES`, `ErrorCode`, `ActionResult`, the `{ data } | { error }` envelope. No bespoke response shapes, no error text a caller has to parse to branch.
 - Authorisation rides with the data: every entry point calls `getUser`/`getUserOrThrow` and works under RLS, so an agent gets exactly the user's permissions and never more.
