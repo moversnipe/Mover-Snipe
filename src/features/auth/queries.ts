@@ -32,20 +32,25 @@ export const getUser = cache(async (): Promise<SessionUser | null> => {
   return { id: data.claims.sub, email: data.claims.email }
 })
 
-/** Current user, or redirect to login. Use in protected layouts and actions. */
+/** Current user, or redirect to login. Use in protected layouts and pages. Read-only. */
 export const requireUser = async () => {
   const user = await getUser()
   if (!user) redirect(ROUTES.login)
   return user
 }
 
-/** Current user, or throw UNAUTHENTICATED. Use in Route Handlers (createHandler maps it to 401). */
+/** Current user, or throw UNAUTHENTICATED. Use in capabilities and Route Handlers (createHandler maps it to 401). Read-only. */
 export const getUserOrThrow = async () => {
   const user = await getUser()
   if (!user) throw new AppError(ErrorCode.UNAUTHENTICATED, "Sign in required")
   return user
 }
 
+/**
+ * Returns the given user's profile row (id, email, full name, avatar URL), or
+ * null when there is none. Callers pass their own verified id; RLS returns
+ * nothing for anyone else's. Read-only.
+ */
 export const getProfile = cache(async (userId: string) => {
   const supabase = await createClient()
   const { data, error } = await supabase

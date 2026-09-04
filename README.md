@@ -88,7 +88,7 @@ show up there too. Restart the stack after editing `config.toml`
 1. Put your test secret key in `.env.local` as `STRIPE_SECRET_KEY`.
 2. In a second terminal run `npm run stripe:listen` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`.
 3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
-4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `openBillingPortal` can create sessions, once a page mounts it).
+4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `createBillingPortalSession` can create sessions, once a page mounts the portal button).
 
 ### 4. Run
 
@@ -137,8 +137,8 @@ src/
 │   ├── api/                    health/, webhooks/stripe/
 │   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
 ├── features/                   Domain modules
-│   ├── auth/                   schemas · queries · actions · redirect · account · components/
-│   └── billing/                schemas · queries · actions · customers · webhook-handlers · enums · format · components/
+│   ├── auth/                   schemas · queries · actions · account · password · redirect · components/
+│   └── billing/                schemas · queries · actions · checkout · customers · webhook-handlers · enums · format · components/
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI
 │   └── app-sidebar.tsx · app-breadcrumb.tsx · providers.tsx
@@ -154,7 +154,7 @@ src/
 ├── hooks/                      use-mobile.ts
 ├── test/                       Vitest setup
 └── proxy.ts                    Session refresh + route protection
-supabase/                       config.toml · migrations/ (profiles, billing, webhook_events) · functions/whoami (Edge Function template)
+supabase/                       config.toml · migrations/ (profiles, billing, webhook_events, column comments) · functions/whoami (Edge Function template)
 .claude/                        Claude Code rules, hooks, agents, commands, skills
 .github/                        CI workflow, Dependabot
 ```
@@ -169,6 +169,7 @@ are written for AI agents but apply to everyone. Highlights:
 - Server Actions return `ActionResult`; API Route Handlers return `{ data }` or `{ error: { code, message } }`.
 - Every table has RLS with one policy per operation and audience; migrations are immutable once merged or applied.
 - The Stripe webhook is the only writer of the billing tables.
+- New capabilities are written to be callable by something other than a form: one named function per capability, Zod-schema input, stable result envelopes, bounded reads (`.claude/rules/agent-ready.md`), so the planned in-app AI chat and MCP server can reuse them instead of forcing a rewrite.
 - `npm run check` must pass before every commit.
 
 ## Working with Claude Code

@@ -89,7 +89,21 @@ const existingPasswordSchema = z
     `Password must be at least ${PASSWORD_MIN_LENGTH} characters`
   )
 
-/** Sign-in: what the user types on /auth/login. */
+/**
+ * Where to send the browser once a session exists. Never rejects the request:
+ * an oversized value is dropped here, and any value that is not a same-origin
+ * path is replaced by the default in `sanitizeNextPath`.
+ */
+const nextPathSchema = z
+  .string()
+  .max(2048)
+  .optional()
+  .catch(undefined)
+  .describe(
+    "Same-origin path to open after sign-in, such as /billing; anything else falls back to the dashboard"
+  )
+
+/** Email and existing password, as typed on /auth/login. */
 export const credentialsSchema = z.object({
   email: emailSchema,
   password: existingPasswordSchema,
@@ -97,12 +111,21 @@ export const credentialsSchema = z.object({
 
 export type CredentialsInput = z.infer<typeof credentialsSchema>
 
-/** Sign-up: credentials plus a confirmation of the chosen password. */
+/** Sign-in: credentials plus the optional path to return to. */
+export const signInSchema = credentialsSchema.extend({ next: nextPathSchema })
+
+export type SignInInput = z.infer<typeof signInSchema>
+
+/**
+ * Sign-up: email, a new password with its confirmation, and the optional
+ * path to open once the account is ready.
+ */
 export const signUpSchema = z
   .object({
     email: emailSchema,
     password: passwordSchema,
     confirmPassword: z.string(),
+    next: nextPathSchema,
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords do not match",
@@ -116,15 +139,21 @@ export const forgotPasswordSchema = z.object({ email: emailSchema })
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 
-/** Update password: the new password, typed twice. */
-export const updatePasswordSchema = z
-  .object({
-    password: passwordSchema,
-    confirmPassword: z.string(),
-  })
+/** Update password: what `updatePassword` needs, every rule in `PASSWORD_RULES`. */
+export const updatePasswordSchema = z.object({
+  password: passwordSchema.describe(
+    "The replacement password; must satisfy every rule in PASSWORD_RULES"
+  ),
+})
+
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>
+
+/** Update-password form: the replacement password, typed twice. */
+export const updatePasswordFormSchema = updatePasswordSchema
+  .extend({ confirmPassword: z.string() })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   })
 
-export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>
+export type UpdatePasswordFormInput = z.infer<typeof updatePasswordFormSchema>

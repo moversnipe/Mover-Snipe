@@ -19,6 +19,17 @@ describe("logger", () => {
     expect(typeof line.time).toBe("string")
   })
 
+  it("keeps the event name as its own indexed field", () => {
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {})
+    logger.info("Checkout session created", {
+      event: "billing.checkout_session.created",
+      userId: "u1",
+    })
+    const line = JSON.parse(spy.mock.calls[0]?.[0] as string)
+    expect(line.event).toBe("billing.checkout_session.created")
+    expect(line.message).toBe("Checkout session created")
+  })
+
   it("routes errors to console.error", () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {})
     logger.error("boom")

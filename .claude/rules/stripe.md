@@ -12,7 +12,7 @@ paths:
 - Handlers re-fetch the object from Stripe when ordering matters (subscriptions) instead of trusting the event payload.
 - Billing period fields (`current_period_start/end`) live on `subscription.items.data[n]`, not on the subscription, in the pinned SDK version. Do not "fix" this back.
 - Stripe enum fields are typed `Known | OtherString`. Parse them with the Zod schemas in `features/billing/enums.ts` before writing to the database; unknown values must fail loudly.
-- Never trust a price id from the client. `startCheckout` re-reads the price through the user's RLS-scoped client before creating a session.
+- Never trust a price id from the client. `createCheckoutSession` in `features/billing/checkout.ts` re-reads the price through the user's RLS-scoped client before creating a session and returns `{ url }`; the `startCheckout` action is a form adapter that redirects to it. `createBillingPortalSession` and `openBillingPortal` pair the same way.
 - Success, cancel, and return URLs are built with `absoluteUrl()` from `src/config/site.ts`.
 - The Stripe secret key and webhook secret come only from `serverEnv`. The SDK instance in `lib/stripe/server.ts` is `server-only`.
 - Amounts are integer minor units (`unit_amount`); format with `formatPrice` only at render time.
