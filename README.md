@@ -2,8 +2,8 @@
 
 Built on **Next.js 16** (App Router, React 19, TypeScript 6), **Supabase**
 (Postgres with row-level security, Auth), **Stripe** (Checkout, Customer
-Portal, webhook-synced subscriptions), and **shadcn/ui on Base UI** with
-Tailwind CSS 4. Ships with a modular repo layout, typed environment
+Portal, webhook-synced subscriptions), **Bright Data** (Web Scraper API with
+webhook delivery), and **shadcn/ui on Base UI** with Tailwind CSS 4. Ships with a modular repo layout, typed environment
 validation, a Server Action result contract, structured errors, tests, CI,
 and a complete Claude Code setup (rules, hooks, agents, commands) so
 AI-assisted changes follow the same conventions as human ones.
@@ -24,6 +24,12 @@ AI-assisted changes follow the same conventions as human ones.
 - `webhook_events` idempotency ledger: every webhook (Stripe or a future provider) is processed at most once per event id; replays, concurrent deliveries, and retries after failure are handled by an atomic claim function.
 - `/billing`: pricing table from the database, Stripe Checkout, Customer Portal.
 - `/dashboard`: profile and current subscription.
+
+**Scraping**
+
+- `scrape_jobs` table: one row per Bright Data Web Scraper API request, created under RLS by the user and completed only by the server.
+- `runScrapeJob` (`src/features/scraping/scrape.ts`) calls Bright Data's synchronous endpoint with up to 20 inputs and stores the records straight away when they arrive within the one-minute window; otherwise the job stays `running` and the webhook at `/api/webhooks/brightdata` completes it.
+- The webhook authenticates with a per-job token derived from `BRIGHTDATA_WEBHOOK_SECRET` that Bright Data echoes back in `Authorization`, runs through the same `webhook_events` ledger as Stripe, and downloads the snapshot itself when Bright Data only sends a `ready` notice.
 
 **App shell**
 
@@ -49,6 +55,7 @@ AI-assisted changes follow the same conventions as human ones.
 - [Supabase CLI](https://supabase.com/docs/guides/local-development) (used via `npx supabase`)
 - [Stripe CLI](https://docs.stripe.com/stripe-cli) (for `npm run stripe:listen`)
 - A Stripe account in test mode
+- A [Bright Data](https://brightdata.com) account with an API key (Settings → Users)
 
 ## Quick start
 
@@ -89,7 +96,13 @@ show up there too. Restart the stack after editing `config.toml`
 3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
 4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `createBillingPortalSession` can create sessions).
 
-### 4. Run
+### 4. Bright Data
+
+1. Put your API key in the env file from step 1 as `BRIGHTDATA_API_KEY`, and a random value (`openssl rand -hex 32`) as `BRIGHTDATA_WEBHOOK_SECRET`.
+2. Bright Data delivers results by calling `/api/webhooks/brightdata`, so for local testing expose the dev server through a tunnel (for example ngrok) and set `NEXT_PUBLIC_SITE_URL` to the tunnel origin. Results that arrive within Bright Data's one-minute synchronous window are stored without the webhook.
+3. Pick a scraper in the Bright Data Scraper Library and note its dataset id (`gd_...`); `runScrapeJob` takes it as `datasetId`.
+
+### 5. Run
 
 ```bash
 npm run dev
@@ -130,11 +143,12 @@ src/
 │   ├── auth/                   layout.tsx · login/ · sign-up/ · sign-up-success/
 │   │                           forgot-password/ · update-password/
 │   │                           callback/route.ts · auth-code-error/
-│   ├── api/                    health/, webhooks/stripe/
+│   ├── api/                    health/, webhooks/stripe/, webhooks/brightdata/
 │   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
 ├── features/                   Domain modules
 │   ├── auth/                   schemas · queries · actions · password · redirect · components/
-│   └── billing/                schemas · queries · actions · checkout · customers · webhook-handlers · enums · format · components/
+│   ├── billing/                schemas · queries · actions · checkout · customers · webhook-handlers · enums · format · components/
+│   └── scraping/               schemas · queries · scrape · jobs · webhook-handlers
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI
 │   └── app-sidebar.tsx · app-breadcrumb.tsx · providers.tsx
@@ -146,11 +160,12 @@ src/
 │   ├── api/                    handler · validate · response · idempotency · webhook-event-store
 │   ├── supabase/               client · server · admin · session · database.types
 │   ├── stripe/                 server · webhooks
+│   ├── brightdata/             client · webhooks
 │   ├── errors.ts · logger.ts · utils.ts
 ├── hooks/                      use-mobile.ts
 ├── test/                       Vitest setup
 └── proxy.ts                    Session refresh + route protection
-supabase/                       config.toml · migrations/ (profiles, billing, webhook_events, column comments) · functions/whoami (Edge Function template)
+supabase/                       config.toml · migrations/ (profiles, billing, webhook_events, column comments, scrape_jobs) · functions/whoami (Edge Function template)
 .claude/                        Claude Code rules, hooks, agents, commands, skills
 .github/                        CI workflow, Dependabot
 ```
@@ -164,7 +179,7 @@ are written for AI agents but apply to everyone. Highlights:
 - Routes are thin; domain code lives in `src/features/<domain>/` with fixed file names.
 - Server Actions return `ActionResult`; API Route Handlers return `{ data }` or `{ error: { code, message } }`.
 - Every table has RLS with one policy per operation and audience; migrations are immutable once merged or applied.
-- The Stripe webhook is the only writer of the billing tables.
+- The Stripe webhook is the only writer of the billing tables; scrape job status and records are written only by `src/features/scraping/jobs.ts`.
 - New capabilities are written to be callable by something other than a form: one named function per capability, Zod-schema input, stable result envelopes, bounded reads (`.claude/rules/agent-ready.md`), so the planned in-app AI chat and MCP server can reuse them instead of forcing a rewrite.
 - `npm run check` must pass before every commit.
 
@@ -190,6 +205,8 @@ All variables are required (see `.env.example`):
 | `SUPABASE_SECRET_KEY`                  | server | Supabase secret key `sb_secret_...` for the admin client; bypasses RLS (legacy service_role JWT accepted for the local stack) |
 | `STRIPE_SECRET_KEY`                    | server | Stripe API key                                                                                                                |
 | `STRIPE_WEBHOOK_SECRET`                | server | Signing secret for `/api/webhooks/stripe`                                                                                     |
+| `BRIGHTDATA_API_KEY`                   | server | Bright Data API key for the Web Scraper API                                                                                   |
+| `BRIGHTDATA_WEBHOOK_SECRET`            | server | Random secret from which the per-job token Bright Data echoes back on `/api/webhooks/brightdata` is derived                   |
 
 ## Deploying
 
@@ -204,7 +221,8 @@ All variables are required (see `.env.example`):
 5. Settings → JWT Keys: click **Migrate JWT secret**, then **Rotate keys** to the standby ES256 key. After at least the access-token lifetime plus a margin (75 minutes at the default 1 hour), revoke the legacy secret. `getClaims()` picks up the new keys automatically through the JWKS endpoint.
 6. Deploy Edge Functions with `npx supabase functions deploy`; `config.toml` already disables gateway JWT verification for each, and `withSupabase` authorises in code.
 7. In Stripe (live mode) add a webhook endpoint for `https://<your-domain>/api/webhooks/stripe` subscribed to: `product.created`, `product.updated`, `product.deleted`, `price.created`, `price.updated`, `price.deleted`, `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Use its signing secret as `STRIPE_WEBHOOK_SECRET`.
-8. Set all six environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
+8. Bright Data needs no dashboard setup: every scrape request names `https://<your-domain>/api/webhooks/brightdata` as its delivery endpoint, so the domain only has to be reachable from the internet. Set `BRIGHTDATA_API_KEY` and a fresh `BRIGHTDATA_WEBHOOK_SECRET`.
+9. Set all eight environment variables on your host (Vercel or any Node.js platform that runs Next.js) and deploy.
 
 ## Learn more
 

@@ -60,8 +60,8 @@ export const GET = createHandler(async ({ request }) => {
 Three files, one per layer:
 
 1. `src/lib/<provider>/webhooks.ts` — `verify<Provider>Webhook(request)`: reads the raw body, verifies the signature, returns the typed event, throws `AppError(VALIDATION)` on failure. Reads secrets only from `serverEnv`.
-2. `src/features/<domain>/webhook-handlers.ts` — `HANDLED_EVENT_TYPES` and `handle<Provider>Event(event)`. Owns all database writes for that integration. Uses the admin client with a comment explaining why.
-3. `src/app/api/webhooks/<provider>/route.ts` — `export const runtime = "nodejs"`, `createHandler`, verify → skip unhandled types with `{ received: true, handled: false }` → `runOnce(webhookEventStore, { provider, eventId, eventType }, () => handle<Provider>Event(event))` → `apiError(INTERNAL)` on failure so the provider retries.
+2. `src/features/<domain>/webhook-handlers.ts` — `handle<Provider>Event(event)`, plus `HANDLED_EVENT_TYPES` when the provider sends more event types than we act on (Stripe). Owns all database writes for that integration. Uses the admin client with a comment explaining why.
+3. `src/app/api/webhooks/<provider>/route.ts` — `export const runtime = "nodejs"`, `createHandler`, verify → skip unhandled types with `{ received: true, handled: false }` (omitted when the verifier already narrows the event to handled kinds, as for Bright Data) → `runOnce(webhookEventStore, { provider, eventId, eventType }, () => handle<Provider>Event(event))` → `apiError(INTERNAL)` on failure so the provider retries.
 
 Nothing is written to the database before verification succeeds.
 

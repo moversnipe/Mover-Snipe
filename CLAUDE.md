@@ -12,10 +12,10 @@ something the code does not do.
 
 Next.js 16 (App Router, `src/proxy.ts`), React 19, TypeScript 6,
 Tailwind CSS 4, shadcn/ui on **Base UI**, **Supabase** (Postgres, Auth, RLS),
-**Stripe** (Checkout, Customer Portal, webhooks), TanStack Query,
-react-hook-form with zod, and Vitest.
+**Stripe** (Checkout, Customer Portal, webhooks), **Bright Data** (Web
+Scraper API), TanStack Query, react-hook-form with zod, and Vitest.
 
-Supabase and Stripe are required. `src/lib/env/` validates every variable at
+Supabase, Stripe, and Bright Data are required. `src/lib/env/` validates every variable at
 startup and throws with the missing names. Supabase runs on **publishable and
 secret API keys** and **asymmetric JWT signing keys**: identity is always taken
 from `getClaims()` (local signature verification), and every Edge Function has
@@ -52,11 +52,12 @@ src/
     (marketing)/         Public pages            -> /
     (app)/               Signed-in pages         -> /dashboard, /billing (layout calls requireUser)
     auth/                Shared layout, login, sign-up (+ success), forgot/update password, PKCE callback, auth error page
-    api/                 Route Handlers: health, Stripe webhook
+    api/                 Route Handlers: health, Stripe webhook, Bright Data webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
     auth/                Credentials/password schemas, getUser/requireUser/getProfile, sign-in/up/out actions, password.ts (sendPasswordResetEmail, updatePassword), next-path guard, auth forms
     billing/             Products/prices/subscription queries, checkout.ts (createCheckoutSession, createBillingPortalSession) behind the checkout + portal actions, webhook handlers
+    scraping/            Scrape jobs on Bright Data: scrape.ts (runScrapeJob), queries (getScrapeJob, getScrapeJobs), jobs.ts (system-only completion writes), webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
   components/            App-wide, domain-free pieces (app sidebar, breadcrumb, providers, theme toggle)
   config/                routes.ts (ROUTES, public paths, anonymous-only auth paths), navigation.ts (NAV_SECTIONS, active-path helpers, sidebar cookie), site.ts (name, URL, absoluteUrl)
@@ -68,6 +69,7 @@ src/
     logger.ts            Structured JSON logger
     supabase/            client.ts, server.ts, admin.ts, session.ts, database.types.ts
     stripe/              server.ts (SDK instance), webhooks.ts (signature verification)
+    brightdata/          client.ts (synchronous scrape, snapshot download), webhooks.ts (shared-secret verification, event parsing)
   hooks/                 Client hooks (use-*.ts)
   test/                  Vitest setup and the server-only stub
   proxy.ts               Session refresh + route protection (Next.js 16 "proxy", formerly middleware)
@@ -172,7 +174,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 ## Supabase (summary; full rules in `.claude/rules/supabase.md` and the `supabase` skill)
 
 - Identity comes from `getClaims()` through `features/auth/queries.ts` (`getUser`, `requireUser`, `getUserOrThrow`) and `lib/supabase/session.ts`; never `getSession()`.
-- `await createClient()` (server) / `createClient()` (browser) run as the user under RLS. `createAdminClient()` bypasses RLS and is used only in `features/billing/customers.ts`, `features/billing/webhook-handlers.ts`, and `lib/api/webhook-event-store.ts` (the idempotency ledger).
+- `await createClient()` (server) / `createClient()` (browser) run as the user under RLS. `createAdminClient()` bypasses RLS and is used only in `features/billing/customers.ts`, `features/billing/webhook-handlers.ts`, `features/scraping/jobs.ts` (system-only job completion), and `lib/api/webhook-event-store.ts` (the idempotency ledger).
 - Every table has RLS enabled, explicit `grant`s for `anon`/`authenticated`/`service_role`, one policy per operation and audience, `to <role>`, `(select auth.uid())`, indexes on policy and foreign-key columns. Private tables have no policies and a comment saying so. A policy is not a grant: without one, reads fail with `42501 permission denied for table <name>` rather than returning no rows.
 - Migrations are immutable once on `main` or applied to any database. After adding one: `npm run db:reset`, `npm run db:types`, commit both.
 - Explicit column lists in every `select`.
@@ -183,6 +185,12 @@ Error messages returned to users are fixed strings; provider messages are logged
 - `createCheckoutSession` (in `features/billing/checkout.ts`, called by the `startCheckout` action) re-validates the price id against the database before creating a session and returns the hosted URL; the action redirects to it.
 - Every webhook handler runs inside `runOnce` (ledger table `webhook_events`), so replays and concurrent deliveries are safe for any provider.
 - Period fields come from `subscription.items.data[0]`; Stripe enums are parsed with `features/billing/enums.ts`.
+
+## Bright Data (summary; full rules in `.claude/rules/brightdata.md`)
+
+- `runScrapeJob` (`features/scraping/scrape.ts`) inserts a `scrape_jobs` row under RLS, calls the synchronous `POST /datasets/v3/scrape` with our webhook URL as `endpoint` and `notify`, and stores the answer: records on 200, the snapshot id on 202, `failed` on rejection.
+- `/api/webhooks/brightdata?job=<id>` completes jobs that outlived the synchronous window. It authenticates with a per-job token (`webhookAuthorization`, an HMAC of the job id under `BRIGHTDATA_WEBHOOK_SECRET`) that Bright Data echoes back in `Authorization`, is keyed in `webhook_events` by `<jobId>:delivery` or `<jobId>:notification:<status>`, and downloads the snapshot itself on a `ready` notice.
+- Job status and records are written only through `applyScrapeOutcome` in `features/scraping/jobs.ts` (admin client); clients can create (column-level insert grant) and read their own jobs, never update them.
 
 ## UI (summary; full rules in `.claude/rules/ui-components.md`)
 
@@ -203,7 +211,8 @@ helpers ship with tests. See `.claude/rules/tests.md`.
 All required; see `.env.example`. Public: `NEXT_PUBLIC_SITE_URL`,
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 (`sb_publishable_...`). Server-only: `SUPABASE_SECRET_KEY` (`sb_secret_...`),
-`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Legacy `anon`/`service_role` JWTs
+`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BRIGHTDATA_API_KEY`,
+`BRIGHTDATA_WEBHOOK_SECRET`. Legacy `anon`/`service_role` JWTs
 are tolerated for the local CLI stack only. Each Supabase variable holds a single
 key's value; the platform's `SUPABASE_PUBLISHABLE_KEYS` / `SUPABASE_SECRET_KEYS`
 JSON objects are Edge Function runtime variables only, never app env vars (see
@@ -238,7 +247,7 @@ variables in `.env.example` and ask the user to set them.
   - `guard-bash.sh` (PreToolUse Bash) — blocks remote Supabase ops, force pushes, deleting migrations, reading secret env files.
   - `check-file.sh` (PostToolUse Edit/Write) — Prettier-formats the file and fails the tool call on ESLint errors.
   - `stop-check.sh` (Stop) — refuses to finish a turn while `tsc --noEmit` fails on changed TypeScript.
-- **Rules** (`.claude/rules/`, path-scoped): `agent-ready`, `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `edge-functions`, `stripe`, `tests`.
+- **Rules** (`.claude/rules/`, path-scoped): `agent-ready`, `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `edge-functions`, `stripe`, `brightdata`, `tests`.
 - **Agents** (`.claude/agents/`, read-only reviewers): `code-reviewer`, `database-reviewer`, `security-reviewer`. Run them before committing non-trivial work.
 - **Commands** (`.claude/commands/`): `/add-feature`, `/add-migration`, `/add-endpoint`, `/add-component`, `/review`.
 - **Skills** (`.claude/skills/`): `frontend-design`, `supabase`, `vercel-react-best-practices`, `improve`, `agent-browser` (needs the `agent-browser` CLI installed).
@@ -250,6 +259,7 @@ variables in `.env.example` and ask the user to set them.
 inline route strings · `process.env` outside `src/lib/env/` and the test
 bootstrap · `console.*` in app code (outside `logger.ts`) · editing
 `src/components/ui/` by hand (except commented fixes) · editing a committed
-migration · writing to Stripe mirror tables outside the webhook · domain logic
+migration · writing to Stripe mirror tables outside the webhook · writing
+`scrape_jobs` status or records outside `features/scraping/jobs.ts` · domain logic
 only a component or a `route.ts` can call · a new unbounded list read ·
 documenting behaviour that does not exist.

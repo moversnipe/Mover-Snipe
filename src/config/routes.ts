@@ -24,6 +24,7 @@ export const ROUTES = {
   api: {
     health: "/api/health",
     stripeWebhook: "/api/webhooks/stripe",
+    brightdataWebhook: "/api/webhooks/brightdata",
   },
 } as const
 
@@ -44,6 +45,9 @@ const PUBLIC_PATHS: readonly string[] = [
   ROUTES.authError,
   ROUTES.api.health,
   ROUTES.api.stripeWebhook,
+  // Bright Data posts scrape results here; it authenticates with a shared
+  // secret in the request, not with a session.
+  ROUTES.api.brightdataWebhook,
 ]
 
 /**

@@ -148,6 +148,48 @@ export type Database = {
         }
         Relationships: []
       }
+      scrape_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          dataset_id: string
+          error: string | null
+          id: string
+          input: Json
+          records: Json | null
+          snapshot_id: string | null
+          status: Database["public"]["Enums"]["scrape_job_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          dataset_id: string
+          error?: string | null
+          id?: string
+          input: Json
+          records?: Json | null
+          snapshot_id?: string | null
+          status?: Database["public"]["Enums"]["scrape_job_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          dataset_id?: string
+          error?: string | null
+          id?: string
+          input?: Json
+          records?: Json | null
+          snapshot_id?: string | null
+          status?: Database["public"]["Enums"]["scrape_job_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
@@ -262,6 +304,7 @@ export type Database = {
     Enums: {
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
+      scrape_job_status: "running" | "ready" | "failed"
       subscription_status:
         | "trialing"
         | "active"

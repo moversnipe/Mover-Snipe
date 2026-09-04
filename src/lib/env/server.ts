@@ -27,6 +27,10 @@ const serverEnvSchema = z.object({
   SUPABASE_SECRET_KEY: supabaseSecretKey,
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
+  BRIGHTDATA_API_KEY: z.string().min(1),
+  // Never sent anywhere: each scrape job registers an HMAC of its id under
+  // this secret as `auth_header`, and /api/webhooks/brightdata recomputes it.
+  BRIGHTDATA_WEBHOOK_SECRET: z.string().min(16),
 })
 
 const parsed = serverEnvSchema.safeParse(process.env)
