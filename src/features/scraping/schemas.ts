@@ -55,7 +55,7 @@ export const startScrapeSchema = z.object({
     ),
 })
 
-export type StartScrapeInput = z.infer<typeof startScrapeSchema>
+export type StartScrapeInput = z.input<typeof startScrapeSchema>
 
 /** One scrape by id. */
 export const getScrapeSchema = z.object({
@@ -63,6 +63,21 @@ export const getScrapeSchema = z.object({
 })
 
 export type GetScrapeInput = z.infer<typeof getScrapeSchema>
+
+/** Sync of one running scrape against Bright Data. */
+export const syncScrapeSchema = z.object({
+  scrapeId: z.uuid().describe("The scrape to bring up to date"),
+})
+
+export type SyncScrapeInput = z.infer<typeof syncScrapeSchema>
+
+/**
+ * Query string of the delivery URL handed to Bright Data: `startScrape` puts
+ * the scrape id there because the delivered body is the bare records array.
+ */
+export const scrapeDeliverySchema = z.object({
+  scrape: z.uuid().describe("The scrape the delivered records belong to"),
+})
 
 /** Hard ceiling on one scrapes list read. */
 export const SCRAPES_MAX_LIMIT = 100

@@ -2,30 +2,18 @@ import "server-only"
 
 import { timingSafeEqual } from "node:crypto"
 
-import { z } from "zod"
-
-import { webhookAuthHeader } from "@/lib/brightdata/server"
+import {
+  type Json,
+  snapshotRecordsSchema,
+  webhookAuthHeader,
+} from "@/lib/brightdata/server"
 import { AppError, ErrorCode } from "@/lib/errors"
 import { logger } from "@/lib/logger"
 
-/**
- * Completion notification Bright Data posts to the `notify` URL: the snapshot
- * that finished and its final status (`ready` or `failed`). Other fields are
- * ignored.
- */
-const notificationSchema = z.object({
-  snapshot_id: z.string().min(1).max(255),
-  status: z.string().min(1).max(64),
-  error: z.string().max(1000).optional(),
-})
-
-export type BrightDataEvent = {
-  /** Bright Data snapshot id; doubles as the idempotency event id. */
-  snapshotId: string
-  /** Final status as Bright Data reports it, e.g. "ready" or "failed". */
-  status: string
-  /** Error text Bright Data included with a failed notification, if any. */
-  error: string | null
+/** One completed collection as Bright Data delivers it to the `endpoint` URL. */
+export type BrightDataDelivery = {
+  /** The collected records, verbatim, in snapshot order. */
+  records: Json[]
 }
 
 const isEqual = (a: string, b: string) => {
@@ -35,15 +23,16 @@ const isEqual = (a: string, b: string) => {
 }
 
 /**
- * Verifies a Bright Data webhook request and returns the typed event. The
+ * Verifies a Bright Data delivery request and returns the records. The
  * request must carry our shared secret in the Authorization header (Bright
- * Data echoes the `auth_header` value we triggered with); a missing or wrong
- * value throws `AppError(UNAUTHENTICATED)` (HTTP 401) and a malformed body
- * throws `AppError(VALIDATION)` (HTTP 400).
+ * Data sends the value we triggered with); a missing or wrong value throws
+ * `AppError(UNAUTHENTICATED)` (HTTP 401), and a body that is not a JSON array
+ * throws `AppError(VALIDATION)` (HTTP 400). Who the records belong to is read
+ * from the URL by the route, not from the body.
  */
 export const verifyBrightDataWebhook = async (
   request: Request
-): Promise<BrightDataEvent> => {
+): Promise<BrightDataDelivery> => {
   const authorization = request.headers.get("authorization") ?? ""
   if (!isEqual(authorization, webhookAuthHeader())) {
     logger.warn("Rejected Bright Data webhook with invalid secret")
@@ -56,13 +45,9 @@ export const verifyBrightDataWebhook = async (
   } catch {
     throw new AppError(ErrorCode.VALIDATION, "Request body must be valid JSON")
   }
-  const parsed = notificationSchema.safeParse(body)
+  const parsed = snapshotRecordsSchema.safeParse(body)
   if (!parsed.success) {
-    throw new AppError(ErrorCode.VALIDATION, "Invalid notification payload")
+    throw new AppError(ErrorCode.VALIDATION, "Delivery must be a JSON array")
   }
-  return {
-    snapshotId: parsed.data.snapshot_id,
-    status: parsed.data.status,
-    error: parsed.data.error ?? null,
-  }
+  return { records: parsed.data }
 }

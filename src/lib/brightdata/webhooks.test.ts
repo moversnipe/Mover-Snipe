@@ -17,53 +17,39 @@ vi.mock("@/lib/logger", () => ({
 const SECRET = "Bearer webhook-secret-webhook-secret-webhook-secret"
 
 const makeRequest = (body: BodyInit, authorization?: string) =>
-  new Request("http://localhost:3000/api/webhooks/brightdata", {
+  new Request("http://localhost:3000/api/webhooks/brightdata?scrape=abc", {
     method: "POST",
     headers: authorization ? { Authorization: authorization } : {},
     body,
   })
 
 describe("verifyBrightDataWebhook", () => {
-  it("returns the typed event for a request carrying the shared secret", async () => {
+  it("returns the delivered records for a request carrying the shared secret", async () => {
     const request = makeRequest(
-      JSON.stringify({ snapshot_id: "s_1", status: "ready", dataset_id: "gd" }),
+      JSON.stringify([{ name: "A" }, { name: "B", error: "blocked" }]),
       SECRET
     )
     await expect(verifyBrightDataWebhook(request)).resolves.toEqual({
-      snapshotId: "s_1",
-      status: "ready",
-      error: null,
+      records: [{ name: "A" }, { name: "B", error: "blocked" }],
     })
   })
 
-  it("keeps the error text of a failed notification", async () => {
-    const request = makeRequest(
-      JSON.stringify({ snapshot_id: "s_1", status: "failed", error: "boom" }),
-      SECRET
-    )
-    await expect(verifyBrightDataWebhook(request)).resolves.toMatchObject({
-      status: "failed",
-      error: "boom",
-    })
+  it("accepts an empty delivery", async () => {
+    await expect(
+      verifyBrightDataWebhook(makeRequest("[]", SECRET))
+    ).resolves.toEqual({ records: [] })
   })
 
   it("rejects a missing secret with UNAUTHENTICATED", async () => {
-    const request = makeRequest(
-      JSON.stringify({ snapshot_id: "s_1", status: "ready" })
-    )
-    await expect(verifyBrightDataWebhook(request)).rejects.toMatchObject({
-      code: ErrorCode.UNAUTHENTICATED,
-    })
+    await expect(
+      verifyBrightDataWebhook(makeRequest("[]"))
+    ).rejects.toMatchObject({ code: ErrorCode.UNAUTHENTICATED })
   })
 
   it("rejects a wrong secret with UNAUTHENTICATED", async () => {
-    const request = makeRequest(
-      JSON.stringify({ snapshot_id: "s_1", status: "ready" }),
-      "Bearer nope"
-    )
-    await expect(verifyBrightDataWebhook(request)).rejects.toMatchObject({
-      code: ErrorCode.UNAUTHENTICATED,
-    })
+    await expect(
+      verifyBrightDataWebhook(makeRequest("[]", "Bearer nope"))
+    ).rejects.toMatchObject({ code: ErrorCode.UNAUTHENTICATED })
   })
 
   it("rejects a non-JSON body with VALIDATION", async () => {
@@ -72,10 +58,10 @@ describe("verifyBrightDataWebhook", () => {
     ).rejects.toMatchObject({ code: ErrorCode.VALIDATION })
   })
 
-  it("rejects a body without snapshot_id with VALIDATION", async () => {
+  it("rejects a body that is not an array with VALIDATION", async () => {
     await expect(
       verifyBrightDataWebhook(
-        makeRequest(JSON.stringify({ status: "ready" }), SECRET)
+        makeRequest(JSON.stringify({ snapshot_id: "s_1" }), SECRET)
       )
     ).rejects.toMatchObject({ code: ErrorCode.VALIDATION })
   })

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   buildTriggerUrl,
   downloadSnapshot,
+  getSnapshotProgress,
   triggerCollection,
 } from "@/lib/brightdata/server"
 import { AppError, ErrorCode } from "@/lib/errors"
@@ -26,6 +27,13 @@ const jsonResponse = (body: unknown, status = 200) =>
     headers: { "Content-Type": "application/json" },
   })
 
+const ENDPOINT = "http://localhost:3000/api/webhooks/brightdata?scrape=abc"
+const PARAMS = {
+  datasetId: "gd_abc",
+  input: [{ url: "https://x" }],
+  endpoint: ENDPOINT,
+}
+
 beforeEach(() => {
   fetchMock.mockReset()
   vi.stubGlobal("fetch", fetchMock)
@@ -36,22 +44,23 @@ afterEach(() => {
 })
 
 describe("buildTriggerUrl", () => {
-  it("points completion at our webhook with the shared secret", () => {
-    const url = new URL(
-      buildTriggerUrl({ datasetId: "gd_abc", input: [{ url: "https://x" }] })
-    )
+  it("asks for uncompressed JSON delivery to the endpoint with the shared secret", () => {
+    const url = new URL(buildTriggerUrl(PARAMS))
     expect(url.origin + url.pathname).toBe(
       "https://api.brightdata.com/datasets/v3/trigger"
     )
     expect(url.searchParams.get("dataset_id")).toBe("gd_abc")
     expect(url.searchParams.get("format")).toBe("json")
     expect(url.searchParams.get("include_errors")).toBe("true")
-    expect(url.searchParams.get("notify")).toBe(
-      "http://localhost:3000/api/webhooks/brightdata"
-    )
+    expect(url.searchParams.get("endpoint")).toBe(ENDPOINT)
+    expect(url.searchParams.get("uncompressed_webhook")).toBe("true")
     expect(url.searchParams.get("auth_header")).toBe(
       "Bearer webhook-secret-webhook-secret-webhook-secret"
     )
+    expect(url.searchParams.get("webhook_header_Authorization")).toBe(
+      "Bearer webhook-secret-webhook-secret-webhook-secret"
+    )
+    expect(url.searchParams.has("notify")).toBe(false)
     expect(url.searchParams.has("type")).toBe(false)
     expect(url.searchParams.has("limit_per_input")).toBe(false)
   })
@@ -59,7 +68,7 @@ describe("buildTriggerUrl", () => {
   it("adds discovery and limit parameters when given", () => {
     const url = new URL(
       buildTriggerUrl({
-        datasetId: "gd_abc",
+        ...PARAMS,
         input: [{ keyword: "movers" }],
         discoverBy: "keyword",
         limitPerInput: 10,
@@ -77,9 +86,9 @@ describe("triggerCollection", () => {
   it("posts the inputs with the API key and returns the snapshot id", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ snapshot_id: "s_1" }))
 
-    await expect(
-      triggerCollection({ datasetId: "gd_abc", input: [{ url: "https://x" }] })
-    ).resolves.toEqual({ snapshotId: "s_1" })
+    await expect(triggerCollection(PARAMS)).resolves.toEqual({
+      snapshotId: "s_1",
+    })
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(url).toContain("dataset_id=gd_abc")
@@ -91,17 +100,37 @@ describe("triggerCollection", () => {
   it("throws EXTERNAL_SERVICE when Bright Data rejects the trigger", async () => {
     fetchMock.mockResolvedValue(jsonResponse({ error: "bad" }, 400))
 
-    await expect(
-      triggerCollection({ datasetId: "gd_abc", input: [{ url: "https://x" }] })
-    ).rejects.toMatchObject({ code: ErrorCode.EXTERNAL_SERVICE })
+    await expect(triggerCollection(PARAMS)).rejects.toMatchObject({
+      code: ErrorCode.EXTERNAL_SERVICE,
+    })
   })
 
   it("throws EXTERNAL_SERVICE when the response has no snapshot id", async () => {
     fetchMock.mockResolvedValue(jsonResponse({}))
 
-    await expect(
-      triggerCollection({ datasetId: "gd_abc", input: [{ url: "https://x" }] })
-    ).rejects.toBeInstanceOf(AppError)
+    await expect(triggerCollection(PARAMS)).rejects.toBeInstanceOf(AppError)
+  })
+})
+
+describe("getSnapshotProgress", () => {
+  it("returns the status Bright Data reports", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ snapshot_id: "s_1", dataset_id: "gd", status: "running" })
+    )
+
+    await expect(getSnapshotProgress("s_1")).resolves.toEqual({
+      status: "running",
+    })
+    const [url] = fetchMock.mock.calls[0] as [string]
+    expect(url).toBe("https://api.brightdata.com/datasets/v3/progress/s_1")
+  })
+
+  it("throws EXTERNAL_SERVICE on a failed request", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ error: "nope" }, 404))
+
+    await expect(getSnapshotProgress("s_1")).rejects.toMatchObject({
+      code: ErrorCode.EXTERNAL_SERVICE,
+    })
   })
 })
 

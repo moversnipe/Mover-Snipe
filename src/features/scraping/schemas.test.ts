@@ -7,6 +7,7 @@ import {
   SCRAPES_MAX_LIMIT,
   getScrapeSchema,
   listScrapeRecordsSchema,
+  scrapeDeliverySchema,
   listScrapesSchema,
   startScrapeSchema,
 } from "@/features/scraping/schemas"
@@ -70,6 +71,17 @@ describe("getScrapeSchema", () => {
       }).success
     ).toBe(true)
     expect(getScrapeSchema.safeParse({ scrapeId: "1" }).success).toBe(false)
+  })
+})
+
+describe("scrapeDeliverySchema", () => {
+  it("reads the scrape id from the delivery query string", () => {
+    expect(
+      scrapeDeliverySchema.safeParse({
+        scrape: "6f1c9c1e-6a5f-4d9a-9b1b-2b7a3c1d4e5f",
+      }).success
+    ).toBe(true)
+    expect(scrapeDeliverySchema.safeParse({ scrape: "x" }).success).toBe(false)
   })
 })
 
