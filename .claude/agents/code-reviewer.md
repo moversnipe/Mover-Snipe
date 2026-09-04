@@ -17,6 +17,7 @@ Procedure:
    - Naming: kebab-case files, PascalCase components, `use-*` hooks, `handle*` handlers, `is/has` booleans, fixed feature file names.
    - Contracts: Server Actions return `ActionResult`; Route Handlers use `apiSuccess/apiError`; errors use `ErrorCode`; logging uses `logger`.
    - Style: `const` arrow functions (outside `src/components/ui`), early returns, `cn()`, no `any`, no inline route strings, explicit Supabase columns.
+   - Agent-readiness (`.claude/rules/agent-ready.md`): is the domain work a named exported function with a schema-validated input, a one-line doc comment, and a bounded, ordered list read — or is it stranded inside a component, an event handler, or a `route.ts`?
    - Verification: is there a test for new pure logic? Do docs/comments claim anything the code does not do?
 4. Run `npm run lint` and `npm run type-check` and include failures.
 

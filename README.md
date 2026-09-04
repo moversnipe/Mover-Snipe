@@ -165,6 +165,7 @@ are written for AI agents but apply to everyone. Highlights:
 - Server Actions return `ActionResult`; API Route Handlers return `{ data }` or `{ error: { code, message } }`.
 - Every table has RLS with one policy per operation and audience; migrations are immutable once merged or applied.
 - The Stripe webhook is the only writer of the billing tables.
+- New capabilities are written to be callable by something other than a form: one named function per capability, Zod-schema input, stable result envelopes, bounded reads (`.claude/rules/agent-ready.md`), so the planned in-app AI chat and MCP server can reuse them instead of forcing a rewrite.
 - `npm run check` must pass before every commit.
 
 ## Working with Claude Code
