@@ -28,12 +28,14 @@ export const createCheckoutSession = async (
   const user = await getUserOrThrow()
 
   // Re-validate the price against our RLS-protected mirror so a caller cannot
-  // check out with an inactive or unknown price.
+  // check out with an inactive or unknown price. RLS alone is not enough: a
+  // subscriber can still read the archived price on their own subscription.
   const supabase = await createClient()
   const { data: price, error: priceError } = await supabase
     .from("prices")
     .select("id, type")
     .eq("id", input.priceId)
+    .eq("active", true)
     .maybeSingle()
   if (priceError) {
     logger.error("Price lookup failed", {

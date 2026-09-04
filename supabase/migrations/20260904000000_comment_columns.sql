@@ -7,11 +7,11 @@
 comment on column public.profiles.id is
   'The auth.users id this profile belongs to.';
 comment on column public.profiles.email is
-  'Copy of auth.users.email, kept current by trigger. Null when the auth user has no email.';
+  'Copy of auth.users.email, written on sign-up and refreshed by trigger when the auth email changes. Null when the auth user has no email.';
 comment on column public.profiles.full_name is
   'Display name from sign-up metadata. Null when never provided.';
 comment on column public.profiles.avatar_url is
-  'Absolute URL of the profile image. Null when never provided.';
+  'URL of the profile image from sign-up metadata. Null when never provided.';
 comment on column public.profiles.created_at is
   'UTC time the profile row was created.';
 comment on column public.profiles.updated_at is
@@ -21,7 +21,7 @@ comment on column public.profiles.updated_at is
 comment on column public.customers.id is
   'The auth.users id of the customer.';
 comment on column public.customers.stripe_customer_id is
-  'Stripe customer id (cus_...) created for this user on first checkout.';
+  'Stripe customer id (cus_...) created the first time this user starts a checkout or opens the billing portal.';
 comment on column public.customers.created_at is
   'UTC time the mapping was created. Rows are never updated.';
 
@@ -49,7 +49,7 @@ comment on column public.prices.id is
 comment on column public.prices.product_id is
   'The product this price belongs to.';
 comment on column public.prices.active is
-  'False once archived in Stripe. Only active prices can be checked out.';
+  'False once archived in Stripe. Archived prices are hidden from the catalogue and cannot start a checkout; subscribers keep read access to the price on their own subscription.';
 comment on column public.prices.description is
   'Stripe price nickname. Null when none is set.';
 comment on column public.prices.unit_amount is
@@ -79,15 +79,15 @@ comment on column public.subscriptions.user_id is
 comment on column public.subscriptions.status is
   'Stripe subscription status. trialing and active grant access; the rest do not.';
 comment on column public.subscriptions.price_id is
-  'The price on the first subscription item. Null if that price was deleted in Stripe.';
+  'The price on the first subscription item. Null when the subscription has no items or that price was deleted in Stripe.';
 comment on column public.subscriptions.quantity is
   'Quantity on the first subscription item. Null when Stripe reports none.';
 comment on column public.subscriptions.cancel_at_period_end is
   'True when the subscriber has chosen to end the subscription at current_period_end.';
 comment on column public.subscriptions.current_period_start is
-  'UTC start of the current billing period.';
+  'UTC start of the current billing period. Null when the subscription has no items.';
 comment on column public.subscriptions.current_period_end is
-  'UTC end of the current billing period; the next renewal or, with cancel_at_period_end, the end of access.';
+  'UTC end of the current billing period; the next renewal or, with cancel_at_period_end, the end of access. Null when the subscription has no items.';
 comment on column public.subscriptions.ended_at is
   'UTC time the subscription ended. Null while it is live.';
 comment on column public.subscriptions.cancel_at is
@@ -117,7 +117,7 @@ comment on column public.webhook_events.status is
 comment on column public.webhook_events.attempts is
   'Number of times the event has been claimed, including the first.';
 comment on column public.webhook_events.error is
-  'Message from the last failed attempt, truncated to 1000 characters. Null after success.';
+  'Message from the last failed attempt, truncated to 1000 characters. Null after success and while a retry is in progress.';
 comment on column public.webhook_events.received_at is
   'UTC time of the first delivery.';
 comment on column public.webhook_events.processed_at is

@@ -90,14 +90,15 @@ const existingPasswordSchema = z
   )
 
 /**
- * Where to send the browser once a session exists. Any value that is not a
- * same-origin path is replaced by the default (`sanitizeNextPath`), so this
- * only bounds the size; it never rejects the request.
+ * Where to send the browser once a session exists. Never rejects the request:
+ * an oversized value is dropped here, and any value that is not a same-origin
+ * path is replaced by the default in `sanitizeNextPath`.
  */
 const nextPathSchema = z
   .string()
   .max(2048)
   .optional()
+  .catch(undefined)
   .describe(
     "Same-origin path to open after sign-in, such as /billing; anything else falls back to the dashboard"
   )

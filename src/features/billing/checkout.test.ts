@@ -25,15 +25,22 @@ vi.mock("@/lib/stripe/server", () => ({
   },
 }))
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: async () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({ maybeSingle: () => priceLookup() }),
-      }),
+const priceFilters = vi.fn()
+
+vi.mock("@/lib/supabase/server", () => {
+  const query = {
+    eq: (column: string, value: unknown) => {
+      priceFilters(column, value)
+      return query
+    },
+    maybeSingle: () => priceLookup(),
+  }
+  return {
+    createClient: async () => ({
+      from: () => ({ select: () => query }),
     }),
-  }),
-}))
+  }
+})
 
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -56,10 +63,12 @@ describe("createCheckoutSession", () => {
     })
   })
 
-  it("returns the hosted session url for a known price", async () => {
+  it("returns the hosted session url for a known active price", async () => {
     await expect(
       createCheckoutSession({ priceId: "price_1" })
     ).resolves.toEqual({ url: "https://checkout.stripe.com/cs_1" })
+    expect(priceFilters).toHaveBeenCalledWith("id", "price_1")
+    expect(priceFilters).toHaveBeenCalledWith("active", true)
     expect(checkoutCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         customer: "cus_1",

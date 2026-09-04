@@ -96,14 +96,26 @@ describe("signInSchema", () => {
     )
   })
 
-  it("bounds the next path but leaves its shape to sanitizeNextPath", () => {
+  it("leaves the shape of next to sanitizeNextPath", () => {
     const base = { email: "user@example.com", password: "longenough" }
-    expect(
-      signInSchema.safeParse({ ...base, next: "https://evil.example" }).success
-    ).toBe(true)
-    expect(
-      signInSchema.safeParse({ ...base, next: `/${"a".repeat(2048)}` }).success
-    ).toBe(false)
+    const result = signInSchema.safeParse({
+      ...base,
+      next: "https://evil.example",
+    })
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    expect(result.data.next).toBe("https://evil.example")
+  })
+
+  it("drops an oversized next instead of failing the sign-in", () => {
+    const base = { email: "user@example.com", password: "longenough" }
+    const result = signInSchema.safeParse({
+      ...base,
+      next: `/${"a".repeat(2048)}`,
+    })
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    expect(result.data.next).toBeUndefined()
   })
 })
 
