@@ -19,4 +19,5 @@ wired identically.
 - `redirect()` throws a special error. Call it outside `try/catch`, after all validation, or it will be swallowed.
 - After a mutation, call `revalidatePath`/`revalidateTag` for the affected routes.
 - Log failures with `logger.error` including ids, never secrets or full payloads. Expected auth outcomes (bad credentials, a password the provider rejects) are `logger.warn`, since they are user error rather than a fault.
+- An action is an adapter: parse the form, authenticate, call a named feature function, map the result. Once the body grows past that, move the work into the feature module so a caller without a form can reach it (`.claude/rules/agent-ready.md`).
 - Client side: bind with `useActionState(action, undefined)`; show `fieldError(state, "field")` under inputs and `formError(state)` for the error or confirmation that belongs to the form as a whole; use `useFormStatus()` in a child submit button when pending state is needed there. (`useActionState` replaced React's old `useFormState`; `useFormStatus` is current and correct.)

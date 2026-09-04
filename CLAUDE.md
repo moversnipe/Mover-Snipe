@@ -75,20 +75,35 @@ src/
 
 ## Where code goes
 
-| You need to…                               | Put it in                                                                                                                                                                     |
-| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Add a page                                 | `src/app/(app)/<name>/page.tsx` (protected) or `src/app/(marketing)/` (public); register in `src/config/routes.ts`                                                            |
-| Put a page in the sidebar                  | Add a `NavItem` to the right section of `NAV_SECTIONS` in `src/config/navigation.ts`                                                                                          |
-| Read data on the server                    | `src/features/<domain>/queries.ts` (`server-only`, `React.cache`, explicit columns)                                                                                           |
-| Mutate data from our UI                    | `src/features/<domain>/actions.ts` Server Action returning `ActionResult`                                                                                                     |
-| Accept calls from outside (webhook, probe) | `src/app/api/<resource>/route.ts` on `createHandler`; webhooks add `lib/<provider>/webhooks.ts` + `features/<domain>/webhook-handlers.ts` (see `.claude/rules/api-routes.md`) |
-| Validate input                             | Zod schema in `src/features/<domain>/schemas.ts`, shared by client and server                                                                                                 |
-| Add domain UI                              | `src/features/<domain>/components/`                                                                                                                                           |
-| Add a reusable primitive                   | `npx shadcn@latest add <name>` into `src/components/ui/`                                                                                                                      |
-| Add a table                                | New file in `supabase/migrations/` with RLS and grants, then `npm run db:types`                                                                                               |
-| Add an env var                             | Schema in `src/lib/env/`, `.env.example`, CI env block in `.github/workflows/ci.yml`                                                                                          |
-| Add an error kind                          | `ErrorCode` in `src/lib/errors.ts`                                                                                                                                            |
-| Add a route path                           | `ROUTES` in `src/config/routes.ts`                                                                                                                                            |
+| You need to…                                    | Put it in                                                                                                                                                                     |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add a page                                      | `src/app/(app)/<name>/page.tsx` (protected) or `src/app/(marketing)/` (public); register in `src/config/routes.ts`                                                            |
+| Put a page in the sidebar                       | Add a `NavItem` to the right section of `NAV_SECTIONS` in `src/config/navigation.ts`                                                                                          |
+| Read data on the server                         | `src/features/<domain>/queries.ts` (`server-only`, `React.cache`, explicit columns)                                                                                           |
+| Mutate data from our UI                         | `src/features/<domain>/actions.ts` Server Action returning `ActionResult`                                                                                                     |
+| Accept calls from outside (webhook, probe)      | `src/app/api/<resource>/route.ts` on `createHandler`; webhooks add `lib/<provider>/webhooks.ts` + `features/<domain>/webhook-handlers.ts` (see `.claude/rules/api-routes.md`) |
+| Validate input                                  | Zod schema in `src/features/<domain>/schemas.ts`, shared by client and server                                                                                                 |
+| Add domain UI                                   | `src/features/<domain>/components/`                                                                                                                                           |
+| Add a reusable primitive                        | `npx shadcn@latest add <name>` into `src/components/ui/`                                                                                                                      |
+| Add a table                                     | New file in `supabase/migrations/` with RLS and grants, then `npm run db:types`                                                                                               |
+| Add an env var                                  | Schema in `src/lib/env/`, `.env.example`, CI env block in `.github/workflows/ci.yml`                                                                                          |
+| Add an error kind                               | `ErrorCode` in `src/lib/errors.ts`                                                                                                                                            |
+| Add a route path                                | `ROUTES` in `src/config/routes.ts`                                                                                                                                            |
+| Expose a capability to the AI chat or MCP later | Nothing extra: a named function in `src/features/<domain>/` with a Zod schema and a one-line doc comment (`.claude/rules/agent-ready.md`)                                     |
+
+## Agent-ready by default (summary; full rules in `.claude/rules/agent-ready.md`)
+
+Later stages add an in-app AI chat and an MCP server. Neither exists yet and
+neither is scaffolded now, but every process, endpoint, and table built before
+then must be callable by a non-human caller without a rewrite.
+
+- One capability is one named, exported, typed function in `src/features/<domain>/`. Forms, Route Handlers, and future chat tools are thin adapters over it; nothing important lives only inside a component or a `route.ts`.
+- Input is one Zod object from `schemas.ts` (`.describe()` the fields whose meaning is not obvious from the name); output is JSON-serialisable data. `FormData` and `Request` stay in the adapter.
+- Every exported capability opens with a one-line doc comment: what it does, who may call it, what it returns, whether it writes. That line is its future tool description.
+- Contracts stay stable and enumerable: `ROUTES`, `ErrorCode`, `ActionResult`, the `{ data } | { error }` envelope. No bespoke response shapes, no error text a caller has to parse to branch.
+- Authorisation rides with the data: every entry point calls `getUser`/`getUserOrThrow` and works under RLS, so an agent gets exactly the user's permissions and never more.
+- Writes are safe to run twice; anything that spends money, sends mail, or calls a third party sits in its own narrowly named function. Reads are bounded, ordered, and paged.
+- Multi-step processes keep their state in the database and expose one callable step at a time.
 
 ## Naming
 
@@ -221,7 +236,7 @@ variables in `.env.example` and ask the user to set them.
   - `guard-bash.sh` (PreToolUse Bash) — blocks remote Supabase ops, force pushes, deleting migrations, reading secret env files.
   - `check-file.sh` (PostToolUse Edit/Write) — Prettier-formats the file and fails the tool call on ESLint errors.
   - `stop-check.sh` (Stop) — refuses to finish a turn while `tsc --noEmit` fails on changed TypeScript.
-- **Rules** (`.claude/rules/`, path-scoped): `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `edge-functions`, `stripe`, `tests`.
+- **Rules** (`.claude/rules/`, path-scoped): `agent-ready`, `app-router`, `api-routes`, `features`, `server-actions`, `ui-components`, `lib`, `supabase`, `edge-functions`, `stripe`, `tests`.
 - **Agents** (`.claude/agents/`, read-only reviewers): `code-reviewer`, `database-reviewer`, `security-reviewer`. Run them before committing non-trivial work.
 - **Commands** (`.claude/commands/`): `/add-feature`, `/add-migration`, `/add-endpoint`, `/add-component`, `/review`.
 - **Skills** (`.claude/skills/`): `frontend-design`, `supabase`, `vercel-react-best-practices`, `improve`, `agent-browser` (needs the `agent-browser` CLI installed).
@@ -233,5 +248,6 @@ variables in `.env.example` and ask the user to set them.
 inline route strings · `process.env` outside `src/lib/env/` and the test
 bootstrap · `console.*` in app code (outside `logger.ts`) · editing
 `src/components/ui/` by hand (except commented fixes) · editing a committed
-migration · writing to Stripe mirror tables outside the webhook · documenting
+migration · writing to Stripe mirror tables outside the webhook · domain logic
+only a component or a `route.ts` can call · an unbounded list read · documenting
 behaviour that does not exist.
