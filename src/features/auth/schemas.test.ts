@@ -5,6 +5,8 @@ import {
   credentialsSchema,
   forgotPasswordSchema,
   getUnmetPasswordRules,
+  newPasswordSchema,
+  signInSchema,
   signUpSchema,
   updatePasswordSchema,
 } from "@/features/auth/schemas"
@@ -85,7 +87,37 @@ describe("credentialsSchema", () => {
   })
 })
 
+describe("signInSchema", () => {
+  it("accepts credentials with or without a next path", () => {
+    const base = { email: "user@example.com", password: "longenough" }
+    expect(signInSchema.safeParse(base).success).toBe(true)
+    expect(signInSchema.safeParse({ ...base, next: "/billing" }).success).toBe(
+      true
+    )
+  })
+
+  it("bounds the next path but leaves its shape to sanitizeNextPath", () => {
+    const base = { email: "user@example.com", password: "longenough" }
+    expect(
+      signInSchema.safeParse({ ...base, next: "https://evil.example" }).success
+    ).toBe(true)
+    expect(
+      signInSchema.safeParse({ ...base, next: `/${"a".repeat(2048)}` }).success
+    ).toBe(false)
+  })
+})
+
 describe("signUpSchema", () => {
+  it("accepts an optional next path", () => {
+    const result = signUpSchema.safeParse({
+      email: "user@example.com",
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
+      next: "/billing",
+    })
+    expect(result.success).toBe(true)
+  })
+
   it("accepts matching passwords that meet every rule", () => {
     const result = signUpSchema.safeParse({
       email: "user@example.com",
@@ -148,6 +180,20 @@ describe("forgotPasswordSchema", () => {
     expect(forgotPasswordSchema.safeParse({ email: "nope" }).success).toBe(
       false
     )
+  })
+})
+
+describe("newPasswordSchema", () => {
+  it("accepts a compliant password on its own", () => {
+    expect(
+      newPasswordSchema.safeParse({ password: STRONG_PASSWORD }).success
+    ).toBe(true)
+  })
+
+  it("rejects a password that misses a rule", () => {
+    expect(
+      newPasswordSchema.safeParse({ password: "longenough" }).success
+    ).toBe(false)
   })
 })
 

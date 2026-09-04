@@ -64,7 +64,7 @@ const BillingPage = async ({ searchParams }: BillingPageProps) => {
         </h2>
         <PricingTable
           products={products}
-          currentPriceId={subscription?.prices?.id}
+          currentPriceId={subscription?.price?.id}
         />
       </section>
     </>

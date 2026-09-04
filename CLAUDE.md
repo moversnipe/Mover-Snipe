@@ -55,8 +55,8 @@ src/
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
-    auth/                Credentials/password schemas, getUser/requireUser, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms
-    billing/             Products/prices/subscription queries, checkout + portal actions, webhook handlers
+    auth/                Credentials/password schemas, getUser/requireUser/getProfile, sign-in/up/out actions, password.ts (sendPasswordResetEmail, updatePassword), next-path guard, auth forms
+    billing/             Products/prices/subscription queries, checkout.ts (createCheckoutSession, createBillingPortalSession) behind the checkout + portal actions, webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
   components/            App-wide, domain-free pieces (app sidebar, breadcrumb, providers, theme toggle)
   config/                routes.ts (ROUTES, public paths, anonymous-only auth paths), navigation.ts (NAV_SECTIONS, active-path helpers, sidebar cookie), site.ts (name, URL, absoluteUrl)
@@ -139,7 +139,7 @@ then must be callable by a non-human caller without a rewrite.
 - TypeScript strict. No `any`, no non-null `!` except immediately after a check, no `as` casts to silence errors. Index access is `T | undefined` (`noUncheckedIndexedAccess`): handle it.
 - Imports, in groups separated by blank lines: `react`/`next`, third-party, `@/config`, `@/features`, `@/components`, `@/lib`, relative. Always use the `@/` alias; never barrel files.
 - `cn()` from `src/lib/utils.ts` for conditional classes. Design tokens from `globals.css`, no hex literals.
-- Logging only via `logger` from `src/lib/logger.ts`; `console.*` is allowed only inside `logger.ts` itself (its output sink), `error.tsx` boundaries, tests, and hooks.
+- Logging only via `logger` from `src/lib/logger.ts`; `console.*` is allowed only inside `logger.ts` itself (its output sink), `error.tsx` boundaries, tests, and hooks. A line that records a side effect carries an `event` field named `<domain>.<object>.<verb>` (`billing.checkout_session.created`) plus the ids involved.
 - `process.env` is read only in `src/lib/env/`. Test bootstrapping is the one exception: `src/test/setup.ts` seeds public placeholders before `clientEnv` loads, and `supabase/migrations.test.ts` / `supabase/functions.test.ts` read a directory override so they can check themselves. Never in app code.
 - Prettier formats on save and in the PostToolUse hook; do not fight it.
 
@@ -180,7 +180,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 ## Stripe (summary; full rules in `.claude/rules/stripe.md`)
 
 - The webhook is the only writer of `products`, `prices`, `subscriptions` (and `customers` together with `getOrCreateStripeCustomerId`).
-- `startCheckout` re-validates the price id against the database before creating a session.
+- `createCheckoutSession` (in `features/billing/checkout.ts`, called by the `startCheckout` action) re-validates the price id against the database before creating a session and returns the hosted URL; the action redirects to it.
 - Every webhook handler runs inside `runOnce` (ledger table `webhook_events`), so replays and concurrent deliveries are safe for any provider.
 - Period fields come from `subscription.items.data[0]`; Stripe enums are parsed with `features/billing/enums.ts`.
 
