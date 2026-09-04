@@ -55,8 +55,8 @@ src/
     api/                 Route Handlers: health, Stripe webhook
     layout.tsx, error.tsx, global-error.tsx, loading.tsx, not-found.tsx, globals.css
   features/<domain>/     Domain code: schemas.ts, queries.ts, actions.ts, components/, helpers, tests
-    auth/                Credentials/password schemas, getUser/requireUser, sign-in/up/out, password reset + update, next-path and OTP-type guards, auth forms
-    billing/             Products/prices/subscription queries, checkout + portal actions, webhook handlers
+    auth/                Credentials/password schemas, getUser/requireUser/getProfile, sign-in/up/out actions, password.ts (sendPasswordResetEmail, updatePassword), next-path guard, auth forms
+    billing/             Products/prices/subscription queries, checkout.ts (createCheckoutSession, createBillingPortalSession) behind the checkout + portal actions, webhook handlers
   components/ui/         Vendored shadcn/ui (Base UI). Add via CLI; do not hand-edit.
   components/            App-wide, domain-free pieces (app sidebar, breadcrumb, providers, theme toggle)
   config/                routes.ts (ROUTES, public paths, anonymous-only auth paths), navigation.ts (NAV_SECTIONS, active-path helpers, sidebar cookie), site.ts (name, URL, absoluteUrl)
@@ -139,7 +139,7 @@ then must be callable by a non-human caller without a rewrite.
 - TypeScript strict. No `any`, no non-null `!` except immediately after a check, no `as` casts to silence errors. Index access is `T | undefined` (`noUncheckedIndexedAccess`): handle it.
 - Imports, in groups separated by blank lines: `react`/`next`, third-party, `@/config`, `@/features`, `@/components`, `@/lib`, relative. Always use the `@/` alias; never barrel files.
 - `cn()` from `src/lib/utils.ts` for conditional classes. Design tokens from `globals.css`, no hex literals.
-- Logging only via `logger` from `src/lib/logger.ts`; `console.*` is allowed only inside `logger.ts` itself (its output sink), `error.tsx` boundaries, tests, and hooks.
+- Logging only via `logger` from `src/lib/logger.ts`; `console.*` is allowed only inside `logger.ts` itself (its output sink), `error.tsx` boundaries, tests, and hooks. A line that records a side effect carries an `event` field named `<domain>.<object>.<verb>` (`billing.checkout_session.created`) plus the ids involved.
 - `process.env` is read only in `src/lib/env/`. Test bootstrapping is the one exception: `src/test/setup.ts` seeds public placeholders before `clientEnv` loads, and `supabase/migrations.test.ts` / `supabase/functions.test.ts` read a directory override so they can check themselves. Never in app code.
 - Prettier formats on save and in the PostToolUse hook; do not fight it.
 
@@ -153,7 +153,7 @@ then must be callable by a non-human caller without a rewrite.
 
 ## Server Actions (summary; full contract in `.claude/rules/server-actions.md`)
 
-`"use server"` file → Zod validation → `getUser()` → RLS-scoped work → return
+`"use server"` file → Zod validation → `getUser()` (or `getUserOrThrow()` inside the capability it calls) → RLS-scoped work → return
 `ok()`/`fail()`/`failValidation()`/`failFromError()` from `src/lib/actions/result.ts`
 → `revalidatePath` → `redirect()` outside `try/catch`. Client binds with
 `useActionState(action, undefined)`, reads `fieldError(state, "field")` under
@@ -180,7 +180,7 @@ Error messages returned to users are fixed strings; provider messages are logged
 ## Stripe (summary; full rules in `.claude/rules/stripe.md`)
 
 - The webhook is the only writer of `products`, `prices`, `subscriptions` (and `customers` together with `getOrCreateStripeCustomerId`).
-- `startCheckout` re-validates the price id against the database before creating a session.
+- `createCheckoutSession` (in `features/billing/checkout.ts`, called by the `startCheckout` action) re-validates the price id against the database before creating a session and returns the hosted URL; the action redirects to it.
 - Every webhook handler runs inside `runOnce` (ledger table `webhook_events`), so replays and concurrent deliveries are safe for any provider.
 - Period fields come from `subscription.items.data[0]`; Stripe enums are parsed with `features/billing/enums.ts`.
 
@@ -214,7 +214,7 @@ variables in `.env.example` and ask the user to set them.
 ## Security rules (always)
 
 1. Validate on the server with Zod; client validation is UX only.
-2. Authenticate inside every action and protected handler with `getUser()`, which verifies the JWT signature via `getClaims()`; the proxy and layout are defence in depth, not the check.
+2. Authenticate inside every action and protected handler with `getUser()`, or with `getUserOrThrow()` inside the capability it calls; both verify the JWT signature via `getClaims()`. The proxy and layout are defence in depth, not the check.
 3. Authorise via RLS with the user's client; never widen a query with the admin client to "make it work".
 4. Sanitize user-supplied redirect targets with `sanitizeNextPath`.
 5. Verify webhook signatures on the raw body before touching the payload.

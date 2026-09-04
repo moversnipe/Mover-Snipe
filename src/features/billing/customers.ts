@@ -7,8 +7,9 @@ import { stripe } from "@/lib/stripe/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 /**
- * Returns the Stripe customer id for a user, creating the Stripe customer and
- * the private `customers` mapping row on first use.
+ * Returns the Stripe customer id for a verified user, creating the Stripe
+ * customer and the private `customers` mapping row on first use. Server code
+ * only, with a user taken from `getUser`; contacts Stripe on first use.
  *
  * Uses the admin client because `customers` has no client RLS policies.
  */
@@ -55,6 +56,7 @@ export const getOrCreateStripeCustomerId = async (
 
   if (insertError) {
     logger.error("Failed to persist Stripe customer mapping", {
+      event: "billing.customer.create_failed",
       userId: user.id,
       stripeCustomerId: customer.id,
       code: insertError.code,
@@ -64,10 +66,15 @@ export const getOrCreateStripeCustomerId = async (
     })
   }
 
+  logger.info("Stripe customer created", {
+    event: "billing.customer.created",
+    userId: user.id,
+    stripeCustomerId: customer.id,
+  })
   return customer.id
 }
 
-/** Resolves the auth user id for a Stripe customer id, or null if unknown. */
+/** Resolves the auth user id for a Stripe customer id, or null if unknown. Webhook code only; read-only. */
 export const getUserIdByStripeCustomerId = async (
   stripeCustomerId: string
 ): Promise<string | null> => {

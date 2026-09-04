@@ -23,6 +23,11 @@ describe("AppError", () => {
     }
   })
 
+  it("answers a stale session and a missing one with 401", () => {
+    expect(ERROR_STATUS[ErrorCode.REAUTHENTICATION_REQUIRED]).toBe(401)
+    expect(ERROR_STATUS[ErrorCode.UNAUTHENTICATED]).toBe(401)
+  })
+
   it("hides messages of unknown errors from users", () => {
     expect(toUserMessage(new Error("db password leaked"))).toBe(
       "Something went wrong. Please try again."

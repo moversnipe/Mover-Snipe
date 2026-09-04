@@ -30,6 +30,7 @@ export const POST = createHandler(async ({ request }) => {
   } catch (error) {
     // Non-2xx makes Stripe retry with backoff; the ledger row is marked failed.
     logger.error("Stripe webhook handler failed", {
+      event: "billing.stripe_event.failed",
       eventId: event.id,
       eventType: event.type,
       message: error instanceof Error ? error.message : String(error),

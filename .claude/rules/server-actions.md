@@ -14,7 +14,7 @@ wired identically.
 - Exception: a redirect-only action that takes no input and always ends in `redirect()` (for example `signOut`) may be typed `Promise<void>` and bound directly to `<form action={...}>`. Say so in its doc comment.
 - Return values only ever come from `src/lib/actions/result.ts`: `ok(data)`, `fail(code, message)`, `failValidation(zodError)`, `failFromError(error)`. Never throw to the client and never return raw strings.
 - Validate every input with a Zod schema from the feature's `schemas.ts` (or a local schema for single fields). Read fields explicitly (`formData.get("email")`), not `Object.fromEntries` on the whole form.
-- Authenticate inside the action with `getUser()`; return `fail(ErrorCode.UNAUTHENTICATED, ...)` when null. The proxy and layout checks are not sufficient on their own.
+- Authenticate inside the action with `getUser()` and return `fail(ErrorCode.UNAUTHENTICATED, ...)` when null, or inside the capability the action calls with `getUserOrThrow()`, whose thrown `AppError` becomes the result through `failFromError`. Either way the check runs on every call; the proxy and layout checks are not sufficient on their own.
 - Authorise against the database with the user's client so RLS applies. Re-check any id the client sent (price ids, record ids) against the database before acting on it.
 - `redirect()` throws a special error. Call it outside `try/catch`, after all validation, or it will be swallowed.
 - After a mutation, call `revalidatePath`/`revalidateTag` for the affected routes.

@@ -102,6 +102,7 @@ const syncSubscription = async (
   const userId = await getUserIdByStripeCustomerId(stripeCustomerId)
   if (!userId) {
     logger.warn("Subscription for unknown Stripe customer; skipping", {
+      event: "billing.subscription.sync_skipped",
       subscriptionId,
       stripeCustomerId,
     })
@@ -135,8 +136,7 @@ const syncSubscription = async (
   throwIfError(error, "upsert subscription")
 }
 
-/** Dispatches one verified Stripe event. Throws on failure so Stripe retries. */
-export const handleStripeEvent = async (event: Stripe.Event) => {
+const dispatchStripeEvent = async (event: Stripe.Event) => {
   switch (event.type) {
     case "product.created":
     case "product.updated":
@@ -168,4 +168,18 @@ export const handleStripeEvent = async (event: Stripe.Event) => {
     default:
       return
   }
+}
+
+/**
+ * Applies one signature-verified Stripe event to the mirror tables. Webhook
+ * route only; writes products, prices, or subscriptions and throws on failure
+ * so Stripe retries.
+ */
+export const handleStripeEvent = async (event: Stripe.Event) => {
+  await dispatchStripeEvent(event)
+  logger.info("Stripe event applied", {
+    event: "billing.stripe_event.processed",
+    eventId: event.id,
+    eventType: event.type,
+  })
 }

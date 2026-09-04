@@ -8,6 +8,8 @@
 export const ErrorCode = {
   VALIDATION: "validation_error",
   UNAUTHENTICATED: "unauthenticated",
+  /** Signed in, but the provider wants a fresh sign-in before this change. */
+  REAUTHENTICATION_REQUIRED: "reauthentication_required",
   FORBIDDEN: "forbidden",
   NOT_FOUND: "not_found",
   CONFLICT: "conflict",
@@ -22,6 +24,7 @@ export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode]
 export const ERROR_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.VALIDATION]: 400,
   [ErrorCode.UNAUTHENTICATED]: 401,
+  [ErrorCode.REAUTHENTICATION_REQUIRED]: 401,
   [ErrorCode.FORBIDDEN]: 403,
   [ErrorCode.NOT_FOUND]: 404,
   [ErrorCode.CONFLICT]: 409,

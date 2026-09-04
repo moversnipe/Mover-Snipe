@@ -133,7 +133,9 @@ of abbreviations. An agent answers questions by reading the schema, and
 
 Every capability with a side effect logs one `logger` line with a stable event
 name and the ids involved — never payloads or secrets — so an agent-triggered
-write is as auditable as a human one.
+write is as auditable as a human one. The name goes in the `event` field as
+`<domain>.<object>.<verb>` (`billing.checkout_session.created`,
+`auth.password.updated`); `message` stays prose for a human.
 
 ## When the AI features arrive
 

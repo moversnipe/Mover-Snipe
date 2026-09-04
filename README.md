@@ -87,7 +87,7 @@ show up there too. Restart the stack after editing `config.toml`
 1. Put your test secret key in `.env.local` as `STRIPE_SECRET_KEY`.
 2. In a second terminal run `npm run stripe:listen` and copy the printed `whsec_…` value into `STRIPE_WEBHOOK_SECRET`.
 3. In the Stripe Dashboard (sandbox or test mode) create a product with at least one recurring price **while the listener is running**; the webhook writes it to `products`/`prices`. For products created earlier, edit and save them to emit `product.updated`.
-4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `openBillingPortal` can create sessions).
+4. Enable the Customer Portal once under Dashboard → Settings → Billing → Customer portal (required before `createBillingPortalSession` can create sessions).
 
 ### 4. Run
 
@@ -133,8 +133,8 @@ src/
 │   ├── api/                    health/, webhooks/stripe/
 │   └── layout.tsx · error.tsx · global-error.tsx · loading.tsx · not-found.tsx
 ├── features/                   Domain modules
-│   ├── auth/                   schemas · queries · actions · redirect · otp · components/
-│   └── billing/                schemas · queries · actions · customers · webhook-handlers · enums · format · components/
+│   ├── auth/                   schemas · queries · actions · password · redirect · components/
+│   └── billing/                schemas · queries · actions · checkout · customers · webhook-handlers · enums · format · components/
 ├── components/
 │   ├── ui/                     shadcn/ui (Base UI) — add via CLI
 │   └── app-sidebar.tsx · app-breadcrumb.tsx · providers.tsx
@@ -150,7 +150,7 @@ src/
 ├── hooks/                      use-mobile.ts
 ├── test/                       Vitest setup
 └── proxy.ts                    Session refresh + route protection
-supabase/                       config.toml · migrations/ (profiles, billing, webhook_events) · functions/whoami (Edge Function template)
+supabase/                       config.toml · migrations/ (profiles, billing, webhook_events, column comments) · functions/whoami (Edge Function template)
 .claude/                        Claude Code rules, hooks, agents, commands, skills
 .github/                        CI workflow, Dependabot
 ```

@@ -5,7 +5,9 @@ import {
   credentialsSchema,
   forgotPasswordSchema,
   getUnmetPasswordRules,
+  signInSchema,
   signUpSchema,
+  updatePasswordFormSchema,
   updatePasswordSchema,
 } from "@/features/auth/schemas"
 
@@ -85,7 +87,49 @@ describe("credentialsSchema", () => {
   })
 })
 
+describe("signInSchema", () => {
+  it("accepts credentials with or without a next path", () => {
+    const base = { email: "user@example.com", password: "longenough" }
+    expect(signInSchema.safeParse(base).success).toBe(true)
+    expect(signInSchema.safeParse({ ...base, next: "/billing" }).success).toBe(
+      true
+    )
+  })
+
+  it("leaves the shape of next to sanitizeNextPath", () => {
+    const base = { email: "user@example.com", password: "longenough" }
+    const result = signInSchema.safeParse({
+      ...base,
+      next: "https://evil.example",
+    })
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    expect(result.data.next).toBe("https://evil.example")
+  })
+
+  it("drops an oversized next instead of failing the sign-in", () => {
+    const base = { email: "user@example.com", password: "longenough" }
+    const result = signInSchema.safeParse({
+      ...base,
+      next: `/${"a".repeat(2048)}`,
+    })
+    expect(result.success).toBe(true)
+    if (!result.success) return
+    expect(result.data.next).toBeUndefined()
+  })
+})
+
 describe("signUpSchema", () => {
+  it("accepts an optional next path", () => {
+    const result = signUpSchema.safeParse({
+      email: "user@example.com",
+      password: STRONG_PASSWORD,
+      confirmPassword: STRONG_PASSWORD,
+      next: "/billing",
+    })
+    expect(result.success).toBe(true)
+  })
+
   it("accepts matching passwords that meet every rule", () => {
     const result = signUpSchema.safeParse({
       email: "user@example.com",
@@ -152,8 +196,22 @@ describe("forgotPasswordSchema", () => {
 })
 
 describe("updatePasswordSchema", () => {
+  it("accepts a compliant password on its own", () => {
+    expect(
+      updatePasswordSchema.safeParse({ password: STRONG_PASSWORD }).success
+    ).toBe(true)
+  })
+
+  it("rejects a password that misses a rule", () => {
+    expect(
+      updatePasswordSchema.safeParse({ password: "longenough" }).success
+    ).toBe(false)
+  })
+})
+
+describe("updatePasswordFormSchema", () => {
   it("accepts a compliant password typed twice", () => {
-    const result = updatePasswordSchema.safeParse({
+    const result = updatePasswordFormSchema.safeParse({
       password: STRONG_PASSWORD,
       confirmPassword: STRONG_PASSWORD,
     })
@@ -161,7 +219,7 @@ describe("updatePasswordSchema", () => {
   })
 
   it("rejects a password that misses a rule", () => {
-    const result = updatePasswordSchema.safeParse({
+    const result = updatePasswordFormSchema.safeParse({
       password: "longenough",
       confirmPassword: "longenough",
     })
@@ -171,7 +229,7 @@ describe("updatePasswordSchema", () => {
   })
 
   it("reports a mismatch on the confirmation field", () => {
-    const result = updatePasswordSchema.safeParse({
+    const result = updatePasswordFormSchema.safeParse({
       password: STRONG_PASSWORD,
       confirmPassword: "Str0ng!pas",
     })

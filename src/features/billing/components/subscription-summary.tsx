@@ -17,7 +17,7 @@ export const SubscriptionSummary = ({
     )
   }
 
-  const price = subscription.prices
+  const price = subscription.price
   const renewsOn = subscription.current_period_end
     ? new Date(subscription.current_period_end).toLocaleDateString()
     : null
@@ -26,7 +26,7 @@ export const SubscriptionSummary = ({
     <div className="flex flex-col gap-2 text-sm">
       <div className="flex items-center gap-2">
         <span className="font-medium">
-          {price?.products?.name ?? "Subscription"}
+          {price?.product?.name ?? "Subscription"}
         </span>
         <Badge variant="secondary">{subscription.status}</Badge>
       </div>
