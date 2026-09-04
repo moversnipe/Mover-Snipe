@@ -112,6 +112,17 @@ describe("handleBrightDataEvent", () => {
     )
   })
 
+  it("throws for a status the route should have filtered", async () => {
+    await expect(
+      handleBrightDataEvent({
+        snapshotId: "s_1",
+        status: "running",
+        error: null,
+      })
+    ).rejects.toThrow("Unhandled Bright Data status running")
+    expect(update).not.toHaveBeenCalled()
+  })
+
   it("throws for an unknown snapshot so the provider retries", async () => {
     scrapeLookup.mockResolvedValue({ data: null, error: null })
 

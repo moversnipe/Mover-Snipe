@@ -4,6 +4,7 @@ import {
   SCRAPE_MAX_INPUTS,
   SCRAPE_RECORDS_MAX_LIMIT,
   SCRAPES_MAX_LIMIT,
+  getScrapeSchema,
   listScrapeRecordsSchema,
   listScrapesSchema,
   startScrapeSchema,
@@ -46,6 +47,17 @@ describe("startScrapeSchema", () => {
     expect(
       startScrapeSchema.safeParse({ datasetId: "gd_abc", input }).success
     ).toBe(false)
+  })
+})
+
+describe("getScrapeSchema", () => {
+  it("requires a uuid", () => {
+    expect(
+      getScrapeSchema.safeParse({
+        scrapeId: "6f1c9c1e-6a5f-4d9a-9b1b-2b7a3c1d4e5f",
+      }).success
+    ).toBe(true)
+    expect(getScrapeSchema.safeParse({ scrapeId: "1" }).success).toBe(false)
   })
 })
 

@@ -1,10 +1,10 @@
 import "server-only"
 
-import { downloadSnapshot } from "@/lib/brightdata/server"
+import { downloadSnapshot, type Json } from "@/lib/brightdata/server"
 import type { BrightDataEvent } from "@/lib/brightdata/webhooks"
 import { logger } from "@/lib/logger"
 import { createAdminClient } from "@/lib/supabase/admin"
-import type { Json, TablesInsert } from "@/lib/supabase/database.types"
+import type { TablesInsert } from "@/lib/supabase/database.types"
 
 // Admin client throughout: the webhook runs with no user session, and
 // `scrapes` has no client update policy while `scrape_records` has no client
@@ -39,16 +39,15 @@ const findScrapeBySnapshotId = async (snapshotId: string) => {
   return data
 }
 
-const storeRecords = async (scrapeId: string, records: unknown[]) => {
+const storeRecords = async (scrapeId: string, records: Json[]) => {
   const admin = createAdminClient()
   for (let start = 0; start < records.length; start += RECORD_BATCH_SIZE) {
     const rows: TablesInsert<"scrape_records">[] = records
       .slice(start, start + RECORD_BATCH_SIZE)
-      // Records come from JSON.parse, so they are already valid Json.
       .map((data, offset) => ({
         scrape_id: scrapeId,
         position: start + offset,
-        data: data as Json,
+        data,
       }))
     const { error } = await admin.from("scrape_records").upsert(rows, {
       onConflict: "scrape_id,position",
@@ -88,8 +87,10 @@ export const handleBrightDataEvent = async (event: BrightDataEvent) => {
       status: "ready",
       record_count: records.length,
     })
-  } else {
+  } else if (event.status === "failed") {
     await completeScrape(scrape.id, { status: "failed", error: event.error })
+  } else {
+    throw new Error(`Unhandled Bright Data status ${event.status}`)
   }
 
   logger.info("Scrape completed", {

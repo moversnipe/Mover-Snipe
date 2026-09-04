@@ -29,7 +29,7 @@ AI-assisted changes follow the same conventions as human ones.
 
 - Bright Data Web Scraper API in asynchronous mode: `startScrape` triggers a collection for a dataset, and Bright Data notifies `/api/webhooks/brightdata` when the snapshot is `ready` or `failed`. The webhook verifies a shared secret, downloads the snapshot with the API key, and stores every record in `scrape_records`; nothing is accepted from the webhook body itself.
 - `scrapes` and `scrape_records` tables under RLS (users see their own), completion written only by the webhook, processed at most once per snapshot through the same `webhook_events` ledger.
-- Paged reads (`listScrapes`, `getScrape`, `listScrapeRecords`) ready for a page, the AI chat, or the MCP server; no UI ships yet.
+- Bounded reads (`listScrapes` and `listScrapeRecords` paged by cursor, `getScrape` by id) ready for a page, the AI chat, or the MCP server; no UI ships yet.
 
 **App shell**
 

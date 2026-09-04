@@ -79,7 +79,7 @@ export const buildTriggerUrl = (params: TriggerCollectionParams): string => {
 
 const requestFailed = (operation: string, status: number) => {
   logger.error("Bright Data request failed", {
-    event: "scraping.brightdata_request.failed",
+    event: "brightdata.request.failed",
     operation,
     status,
   })
@@ -87,7 +87,27 @@ const requestFailed = (operation: string, status: number) => {
 }
 
 const triggerResponseSchema = z.object({ snapshot_id: z.string().min(1) })
-const snapshotResponseSchema = z.array(z.unknown())
+
+/** Any JSON value, as `jsonb` stores it. */
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+const jsonSchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonSchema),
+    z.record(z.string(), jsonSchema),
+  ])
+)
+const snapshotResponseSchema = z.array(jsonSchema)
 
 /**
  * Starts an asynchronous collection and returns its snapshot id. Server code
@@ -114,9 +134,7 @@ export const triggerCollection = async (
  * only; read-only. Throws `AppError(EXTERNAL_SERVICE)` while Bright Data still
  * answers 202 (not ready), so a webhook caller returns non-2xx and is retried.
  */
-export const downloadSnapshot = async (
-  snapshotId: string
-): Promise<unknown[]> => {
+export const downloadSnapshot = async (snapshotId: string): Promise<Json[]> => {
   const url = `${BASE_URL}/snapshot/${encodeURIComponent(snapshotId)}?format=json`
   const response = await fetch(url, { headers: authHeaders() })
   if (!response.ok || response.status === 202) {

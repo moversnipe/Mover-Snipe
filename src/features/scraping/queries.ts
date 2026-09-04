@@ -3,8 +3,10 @@ import "server-only"
 import { cache } from "react"
 
 import {
+  type GetScrapeInput,
   type ListScrapeRecordsInput,
   type ListScrapesInput,
+  getScrapeSchema,
   listScrapeRecordsSchema,
   listScrapesSchema,
 } from "@/features/scraping/schemas"
@@ -15,8 +17,9 @@ const SCRAPE_COLUMNS =
 
 /**
  * Lists the signed-in user's scrapes, newest first, at most `limit` (default
- * 20, maximum 100), continuing after `cursor` when given. RLS scopes the read
- * to the caller's own rows. Read-only.
+ * 20, maximum 100), continuing with scrapes strictly older than `cursor` when
+ * given (ties on created_at are skipped). RLS scopes the read to the caller's
+ * own rows. Read-only.
  */
 export const listScrapes = cache(async (input: ListScrapesInput = {}) => {
   const { limit, cursor } = listScrapesSchema.parse(input)
@@ -38,7 +41,8 @@ export const listScrapes = cache(async (input: ListScrapesInput = {}) => {
  * Returns one scrape by id, or null when it does not exist or belongs to
  * someone else (RLS). Read-only.
  */
-export const getScrape = cache(async (scrapeId: string) => {
+export const getScrape = cache(async (input: GetScrapeInput) => {
+  const { scrapeId } = getScrapeSchema.parse(input)
   const supabase = await createClient()
   const { data, error } = await supabase
     .from("scrapes")

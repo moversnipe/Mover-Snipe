@@ -48,6 +48,13 @@ export const startScrapeSchema = z.object({
 
 export type StartScrapeInput = z.infer<typeof startScrapeSchema>
 
+/** One scrape by id. */
+export const getScrapeSchema = z.object({
+  scrapeId: z.uuid().describe("The scrape to read"),
+})
+
+export type GetScrapeInput = z.infer<typeof getScrapeSchema>
+
 /** Hard ceiling on one scrapes list read. */
 export const SCRAPES_MAX_LIMIT = 100
 
@@ -58,7 +65,7 @@ export const listScrapesSchema = z.object({
     .datetime({ offset: true })
     .optional()
     .describe(
-      "created_at of the last scrape from the previous page; returns older scrapes only"
+      "created_at of the last scrape from the previous page; returns strictly older scrapes, so scrapes created in the same instant as the cursor are skipped"
     ),
 })
 

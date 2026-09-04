@@ -59,7 +59,7 @@ export const GET = createHandler(async ({ request }) => {
 
 Three files, one per layer:
 
-1. `src/lib/<provider>/webhooks.ts` — `verify<Provider>Webhook(request)`: reads the raw body, verifies the signature, returns the typed event, throws `AppError(VALIDATION)` on failure. Reads secrets only from `serverEnv`.
+1. `src/lib/<provider>/webhooks.ts` — `verify<Provider>Webhook(request)`: reads the raw body, verifies the signature (or the shared secret when the provider offers none), returns the typed event, throws `AppError(VALIDATION)` for a malformed request or signature and `AppError(UNAUTHENTICATED)` for a failed shared-secret check. Reads secrets only from `serverEnv`.
 2. `src/features/<domain>/webhook-handlers.ts` — `HANDLED_EVENT_TYPES` and `handle<Provider>Event(event)`. Owns all database writes for that integration. Uses the admin client with a comment explaining why.
 3. `src/app/api/webhooks/<provider>/route.ts` — `export const runtime = "nodejs"`, `createHandler`, verify → skip unhandled types with `{ received: true, handled: false }` → `runOnce(webhookEventStore, { provider, eventId, eventType }, () => handle<Provider>Event(event))` → `apiError(INTERNAL)` on failure so the provider retries.
 
