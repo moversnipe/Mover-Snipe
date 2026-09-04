@@ -9,6 +9,13 @@ const scrapeInputSchema = z.record(
 /** Hard ceiling on inputs per scrape. */
 export const SCRAPE_MAX_INPUTS = 1000
 
+/**
+ * Hard ceiling on records per scrape. Bounds Bright Data spend per run and the
+ * work the webhook does to store a snapshot; a snapshot above it is marked
+ * failed rather than stored.
+ */
+export const SCRAPE_MAX_RECORDS = 10_000
+
 /** Start of a scrape: which Bright Data dataset to run and on what. */
 export const startScrapeSchema = z.object({
   datasetId: z
@@ -34,16 +41,18 @@ export const startScrapeSchema = z.object({
     .number()
     .int()
     .min(1)
-    .max(100_000)
+    .max(SCRAPE_MAX_RECORDS)
     .optional()
     .describe("Maximum records collected per input object"),
   limitMultipleResults: z
     .number()
     .int()
     .min(1)
-    .max(1_000_000)
-    .optional()
-    .describe("Maximum records collected across the whole scrape"),
+    .max(SCRAPE_MAX_RECORDS)
+    .default(SCRAPE_MAX_RECORDS)
+    .describe(
+      "Maximum records collected across the whole scrape; defaults to the ceiling"
+    ),
 })
 
 export type StartScrapeInput = z.infer<typeof startScrapeSchema>

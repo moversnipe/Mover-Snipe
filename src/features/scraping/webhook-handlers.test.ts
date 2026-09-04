@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { SCRAPE_MAX_RECORDS } from "@/features/scraping/schemas"
 import {
   HANDLED_EVENT_TYPES,
   handleBrightDataEvent,
@@ -95,6 +96,24 @@ describe("handleBrightDataEvent", () => {
     const lastBatch = upsert.mock.calls[2]?.[1] as { position: number }[]
     expect(lastBatch).toHaveLength(1)
     expect(lastBatch[0]?.position).toBe(1000)
+  })
+
+  it("marks an oversized snapshot failed instead of storing it", async () => {
+    downloadSnapshot.mockResolvedValue(
+      Array.from({ length: SCRAPE_MAX_RECORDS + 1 }, () => ({}))
+    )
+
+    await handleBrightDataEvent({
+      snapshotId: "s_1",
+      status: "ready",
+      error: null,
+    })
+
+    expect(upsert).not.toHaveBeenCalled()
+    expect(update).toHaveBeenCalledWith(
+      "scrapes",
+      expect.objectContaining({ status: "failed" })
+    )
   })
 
   it("marks the scrape failed without downloading anything", async () => {

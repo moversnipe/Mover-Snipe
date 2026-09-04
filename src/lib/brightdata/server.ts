@@ -53,7 +53,11 @@ const authHeaders = () => ({
 export const webhookAuthHeader = () =>
   `Bearer ${serverEnv.BRIGHTDATA_WEBHOOK_SECRET}`
 
-/** Builds the trigger URL. Exported for tests only. */
+/**
+ * Builds the trigger URL. Exported for tests only. The query string carries
+ * the webhook secret (`auth_header`, as Bright Data's API requires), so this
+ * URL must never be logged.
+ */
 export const buildTriggerUrl = (params: TriggerCollectionParams): string => {
   const url = new URL(`${BASE_URL}/trigger`)
   url.searchParams.set("dataset_id", params.datasetId)

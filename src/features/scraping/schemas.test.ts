@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import {
   SCRAPE_MAX_INPUTS,
+  SCRAPE_MAX_RECORDS,
   SCRAPE_RECORDS_MAX_LIMIT,
   SCRAPES_MAX_LIMIT,
   getScrapeSchema,
@@ -18,6 +19,7 @@ describe("startScrapeSchema", () => {
       limitPerInput: 10,
     })
     expect(parsed.limitPerInput).toBe(10)
+    expect(parsed.limitMultipleResults).toBe(SCRAPE_MAX_RECORDS)
     expect(parsed.discoverBy).toBeUndefined()
   })
 
@@ -36,6 +38,16 @@ describe("startScrapeSchema", () => {
       startScrapeSchema.safeParse({
         datasetId: "gd_abc",
         input: [{ nested: { a: 1 } }],
+      }).success
+    ).toBe(false)
+  })
+
+  it("caps the records per scrape", () => {
+    expect(
+      startScrapeSchema.safeParse({
+        datasetId: "gd_abc",
+        input: [{ url: "x" }],
+        limitMultipleResults: SCRAPE_MAX_RECORDS + 1,
       }).success
     ).toBe(false)
   })

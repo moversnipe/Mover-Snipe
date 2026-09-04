@@ -1,5 +1,6 @@
 import "server-only"
 
+import { SCRAPE_MAX_RECORDS } from "@/features/scraping/schemas"
 import { downloadSnapshot, type Json } from "@/lib/brightdata/server"
 import type { BrightDataEvent } from "@/lib/brightdata/webhooks"
 import { logger } from "@/lib/logger"
@@ -82,11 +83,20 @@ export const handleBrightDataEvent = async (event: BrightDataEvent) => {
 
   if (event.status === "ready") {
     const records = await downloadSnapshot(event.snapshotId)
-    await storeRecords(scrape.id, records)
-    await completeScrape(scrape.id, {
-      status: "ready",
-      record_count: records.length,
-    })
+    if (records.length > SCRAPE_MAX_RECORDS) {
+      // Every trigger caps the run at the ceiling, so this is a defence
+      // against an unexpected snapshot, not a normal path.
+      await completeScrape(scrape.id, {
+        status: "failed",
+        error: `Snapshot has more than ${SCRAPE_MAX_RECORDS} records`,
+      })
+    } else {
+      await storeRecords(scrape.id, records)
+      await completeScrape(scrape.id, {
+        status: "ready",
+        record_count: records.length,
+      })
+    }
   } else if (event.status === "failed") {
     await completeScrape(scrape.id, { status: "failed", error: event.error })
   } else {

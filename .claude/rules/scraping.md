@@ -17,6 +17,7 @@ One scrape is one asynchronous Bright Data Web Scraper API run (a
 
 - The webhook handler is the **only writer** of `scrape_records` and of `scrapes.status`, `record_count`, `error`, `completed_at`; it uses the admin client because those columns have no client write policy. Users insert their own `scrapes` rows and read their own rows and records under RLS.
 - `scrape_status` (`running`, `ready`, `failed`) is mirrored by `scrapeStatusSchema` in `features/scraping/enums.ts` for typing. A scrape is inserted as `running`; only the webhook's `ready`/`failed` notifications change it, and the handler throws on any other status.
+- Spend is bounded per run: `limitMultipleResults` defaults to and is capped at `SCRAPE_MAX_RECORDS` (10 000), and the handler marks a larger snapshot `failed` instead of storing it. There is no per-user quota or plan check yet; add one in `startScrape` before `triggerCollection` when the product defines it.
 - Reads are bounded and paged: `listScrapes` by `created_at` cursor (max 100), `listScrapeRecords` by `position` cursor (max 500). Records are stored verbatim as `jsonb`; interpret them at render time.
 - Never add a second trigger path that skips `notify`/`auth_header`, and never accept records from the request body.
 - `BRIGHTDATA_API_KEY` and `BRIGHTDATA_WEBHOOK_SECRET` come only from `serverEnv`; `lib/brightdata/server.ts` is `server-only`.

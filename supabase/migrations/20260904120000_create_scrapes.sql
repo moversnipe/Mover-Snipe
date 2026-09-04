@@ -11,7 +11,7 @@ create type public.scrape_status as enum ('running', 'ready', 'failed');
 create table public.scrapes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  dataset_id text not null,
+  dataset_id text not null check (dataset_id ~ '^gd_[a-z0-9]+$'),
   snapshot_id text not null unique,
   status public.scrape_status not null default 'running',
   input jsonb not null,
