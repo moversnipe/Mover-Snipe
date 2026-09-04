@@ -51,14 +51,23 @@ export const createCheckoutSession = async (
   }
 
   const customer = await getOrCreateStripeCustomerId(user)
-  const session = await stripe.checkout.sessions.create({
-    customer,
-    mode: price.type === "recurring" ? "subscription" : "payment",
-    line_items: [{ price: price.id, quantity: 1 }],
-    allow_promotion_codes: true,
-    success_url: absoluteUrl(`${ROUTES.billing}?checkout=success`),
-    cancel_url: absoluteUrl(`${ROUTES.billing}?checkout=canceled`),
-  })
+  const session = await stripe.checkout.sessions
+    .create({
+      customer,
+      mode: price.type === "recurring" ? "subscription" : "payment",
+      line_items: [{ price: price.id, quantity: 1 }],
+      allow_promotion_codes: true,
+      success_url: absoluteUrl(`${ROUTES.billing}?checkout=success`),
+      cancel_url: absoluteUrl(`${ROUTES.billing}?checkout=canceled`),
+    })
+    .catch((error: unknown) => {
+      logger.error("Stripe checkout session failed", {
+        event: "billing.checkout_session.failed",
+        userId: user.id,
+        priceId: price.id,
+      })
+      throw error
+    })
   if (!session.url) {
     throw new AppError(ErrorCode.EXTERNAL_SERVICE, "Checkout unavailable.")
   }
@@ -81,10 +90,18 @@ export const createBillingPortalSession = async (): Promise<HostedSession> => {
   const user = await getUserOrThrow()
 
   const customer = await getOrCreateStripeCustomerId(user)
-  const session = await stripe.billingPortal.sessions.create({
-    customer,
-    return_url: absoluteUrl(ROUTES.billing),
-  })
+  const session = await stripe.billingPortal.sessions
+    .create({
+      customer,
+      return_url: absoluteUrl(ROUTES.billing),
+    })
+    .catch((error: unknown) => {
+      logger.error("Stripe portal session failed", {
+        event: "billing.portal_session.failed",
+        userId: user.id,
+      })
+      throw error
+    })
 
   logger.info("Billing portal session created", {
     event: "billing.portal_session.created",

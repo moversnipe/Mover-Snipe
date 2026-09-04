@@ -139,21 +139,21 @@ export const forgotPasswordSchema = z.object({ email: emailSchema })
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>
 
-/** New password: what `updatePassword` needs, every rule in `PASSWORD_RULES`. */
-export const newPasswordSchema = z.object({
+/** Update password: what `updatePassword` needs, every rule in `PASSWORD_RULES`. */
+export const updatePasswordSchema = z.object({
   password: passwordSchema.describe(
     "The replacement password; must satisfy every rule in PASSWORD_RULES"
   ),
 })
 
-export type NewPasswordInput = z.infer<typeof newPasswordSchema>
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>
 
-/** Update-password form: the new password, typed twice. */
-export const updatePasswordSchema = newPasswordSchema
+/** Update-password form: the replacement password, typed twice. */
+export const updatePasswordFormSchema = updatePasswordSchema
   .extend({ confirmPassword: z.string() })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   })
 
-export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>
+export type UpdatePasswordFormInput = z.infer<typeof updatePasswordFormSchema>

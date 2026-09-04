@@ -153,7 +153,7 @@ then must be callable by a non-human caller without a rewrite.
 
 ## Server Actions (summary; full contract in `.claude/rules/server-actions.md`)
 
-`"use server"` file → Zod validation → `getUser()` → RLS-scoped work → return
+`"use server"` file → Zod validation → `getUser()` (or `getUserOrThrow()` inside the capability it calls) → RLS-scoped work → return
 `ok()`/`fail()`/`failValidation()`/`failFromError()` from `src/lib/actions/result.ts`
 → `revalidatePath` → `redirect()` outside `try/catch`. Client binds with
 `useActionState(action, undefined)`, reads `fieldError(state, "field")` under
@@ -214,7 +214,7 @@ variables in `.env.example` and ask the user to set them.
 ## Security rules (always)
 
 1. Validate on the server with Zod; client validation is UX only.
-2. Authenticate inside every action and protected handler with `getUser()`, which verifies the JWT signature via `getClaims()`; the proxy and layout are defence in depth, not the check.
+2. Authenticate inside every action and protected handler with `getUser()`, or with `getUserOrThrow()` inside the capability it calls; both verify the JWT signature via `getClaims()`. The proxy and layout are defence in depth, not the check.
 3. Authorise via RLS with the user's client; never widen a query with the admin client to "make it work".
 4. Sanitize user-supplied redirect targets with `sanitizeNextPath`.
 5. Verify webhook signatures on the raw body before touching the payload.

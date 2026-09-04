@@ -5,9 +5,9 @@ import {
   credentialsSchema,
   forgotPasswordSchema,
   getUnmetPasswordRules,
-  newPasswordSchema,
   signInSchema,
   signUpSchema,
+  updatePasswordFormSchema,
   updatePasswordSchema,
 } from "@/features/auth/schemas"
 
@@ -195,23 +195,23 @@ describe("forgotPasswordSchema", () => {
   })
 })
 
-describe("newPasswordSchema", () => {
+describe("updatePasswordSchema", () => {
   it("accepts a compliant password on its own", () => {
     expect(
-      newPasswordSchema.safeParse({ password: STRONG_PASSWORD }).success
+      updatePasswordSchema.safeParse({ password: STRONG_PASSWORD }).success
     ).toBe(true)
   })
 
   it("rejects a password that misses a rule", () => {
     expect(
-      newPasswordSchema.safeParse({ password: "longenough" }).success
+      updatePasswordSchema.safeParse({ password: "longenough" }).success
     ).toBe(false)
   })
 })
 
-describe("updatePasswordSchema", () => {
+describe("updatePasswordFormSchema", () => {
   it("accepts a compliant password typed twice", () => {
-    const result = updatePasswordSchema.safeParse({
+    const result = updatePasswordFormSchema.safeParse({
       password: STRONG_PASSWORD,
       confirmPassword: STRONG_PASSWORD,
     })
@@ -219,7 +219,7 @@ describe("updatePasswordSchema", () => {
   })
 
   it("rejects a password that misses a rule", () => {
-    const result = updatePasswordSchema.safeParse({
+    const result = updatePasswordFormSchema.safeParse({
       password: "longenough",
       confirmPassword: "longenough",
     })
@@ -229,7 +229,7 @@ describe("updatePasswordSchema", () => {
   })
 
   it("reports a mismatch on the confirmation field", () => {
-    const result = updatePasswordSchema.safeParse({
+    const result = updatePasswordFormSchema.safeParse({
       password: STRONG_PASSWORD,
       confirmPassword: "Str0ng!pas",
     })

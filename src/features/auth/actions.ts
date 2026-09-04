@@ -14,7 +14,7 @@ import {
   forgotPasswordSchema,
   signInSchema,
   signUpSchema,
-  updatePasswordSchema,
+  updatePasswordFormSchema,
 } from "@/features/auth/schemas"
 import {
   type ActionResult,
@@ -152,11 +152,11 @@ export const requestPasswordReset = async (
  * Reached from the recovery link, which establishes a session before the page
  * renders; without one the result tells the user to request a new link.
  */
-export const submitNewPassword = async (
+export const submitUpdatePasswordForm = async (
   _prev: AuthActionResult | undefined,
   formData: FormData
 ): Promise<AuthActionResult> => {
-  const validated = updatePasswordSchema.safeParse({
+  const validated = updatePasswordFormSchema.safeParse({
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   })

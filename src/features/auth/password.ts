@@ -5,7 +5,7 @@ import { getUserOrThrow } from "@/features/auth/queries"
 import { emailRedirectUrl } from "@/features/auth/redirect"
 import type {
   ForgotPasswordInput,
-  NewPasswordInput,
+  UpdatePasswordInput,
 } from "@/features/auth/schemas"
 import { AppError, ErrorCode } from "@/lib/errors"
 import { logger } from "@/lib/logger"
@@ -44,7 +44,7 @@ export const sendPasswordResetEmail = async (
  * Writes to Supabase Auth.
  */
 export const updatePassword = async (
-  input: NewPasswordInput
+  input: UpdatePasswordInput
 ): Promise<void> => {
   const user = await getUserOrThrow()
 

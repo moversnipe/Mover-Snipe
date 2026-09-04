@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react"
 
-import { submitNewPassword } from "@/features/auth/actions"
+import { submitUpdatePasswordForm } from "@/features/auth/actions"
 import { AuthFormMessage } from "@/features/auth/components/auth-form-message"
 import { AuthPageHeader } from "@/features/auth/components/auth-page-header"
 import { AuthSubmitButton } from "@/features/auth/components/auth-submit-button"
@@ -17,7 +17,10 @@ import { Input } from "@/components/ui/input"
 import { fieldError } from "@/lib/actions/result"
 
 export const UpdatePasswordForm = () => {
-  const [state, formAction] = useActionState(submitNewPassword, undefined)
+  const [state, formAction] = useActionState(
+    submitUpdatePasswordForm,
+    undefined
+  )
   const [password, setPassword] = useState("")
 
   return (

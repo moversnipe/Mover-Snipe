@@ -14,7 +14,7 @@ export type CheckoutInput = z.infer<typeof checkoutSchema>
 /** Hard ceiling on one catalogue read. */
 export const PRODUCTS_WITH_PRICES_MAX_LIMIT = 100
 
-/** Catalogue read: how many active products to return, newest names last. */
+/** Catalogue read: how many active products to return, ordered by name. */
 export const productsWithPricesSchema = z.object({
   limit: z
     .number()
