@@ -16,6 +16,8 @@ jobs:
       SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
       STRIPE_SECRET_KEY: sk_test_ci_placeholder
       STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      BRIGHTDATA_API_KEY: brightdata_ci_placeholder
+      BRIGHTDATA_WEBHOOK_SECRET: brightdata_webhook_secret_ci_placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

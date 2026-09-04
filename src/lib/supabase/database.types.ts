@@ -148,6 +148,80 @@ export type Database = {
         }
         Relationships: []
       }
+      scrape_records: {
+        Row: {
+          created_at: string
+          data: Json
+          id: number
+          position: number
+          scrape_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: Json
+          id?: never
+          position: number
+          scrape_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: never
+          position?: number
+          scrape_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scrape_records_scrape_id_fkey"
+            columns: ["scrape_id"]
+            isOneToOne: false
+            referencedRelation: "scrapes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scrapes: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          dataset_id: string
+          error: string | null
+          id: string
+          input: Json
+          record_count: number | null
+          snapshot_id: string
+          status: Database["public"]["Enums"]["scrape_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          dataset_id: string
+          error?: string | null
+          id?: string
+          input: Json
+          record_count?: number | null
+          snapshot_id: string
+          status?: Database["public"]["Enums"]["scrape_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          dataset_id?: string
+          error?: string | null
+          id?: string
+          input?: Json
+          record_count?: number | null
+          snapshot_id?: string
+          status?: Database["public"]["Enums"]["scrape_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cancel_at: string | null
@@ -262,6 +336,7 @@ export type Database = {
     Enums: {
       pricing_plan_interval: "day" | "week" | "month" | "year"
       pricing_type: "one_time" | "recurring"
+      scrape_status: "running" | "ready" | "failed"
       subscription_status:
         | "trialing"
         | "active"

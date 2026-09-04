@@ -2,7 +2,7 @@
 paths:
   - "src/lib/stripe/**"
   - "src/features/billing/**"
-  - "src/app/api/webhooks/**"
+  - "src/app/api/webhooks/stripe/**"
 ---
 
 # Stripe rules

@@ -27,6 +27,14 @@ const serverEnvSchema = z.object({
   SUPABASE_SECRET_KEY: supabaseSecretKey,
   STRIPE_SECRET_KEY: z.string().startsWith("sk_"),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_"),
+  /** Bright Data API key, sent as a Bearer token to api.brightdata.com. */
+  BRIGHTDATA_API_KEY: z.string().min(1),
+  /**
+   * Shared secret Bright Data echoes back in the Authorization header of every
+   * webhook it sends us (the `auth_header` trigger parameter). Our own value,
+   * so long and random: the webhook route verifies nothing else.
+   */
+  BRIGHTDATA_WEBHOOK_SECRET: z.string().min(32),
 })
 
 const parsed = serverEnvSchema.safeParse(process.env)

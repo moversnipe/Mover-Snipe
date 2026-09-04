@@ -20,6 +20,6 @@ feature have fixed names so any agent can find them:
 - Features import from `@/lib`, `@/config`, `@/components`, and from other features' files. Never import from `@/app`.
 - No barrel `index.ts` files: import the concrete module (`@/features/auth/queries`). Barrels defeat tree-shaking and hide dependencies.
 - Feature components take data as props from the page; they do not fetch on their own unless they are Client Components using TanStack Query.
-- Keep the admin client out of features except where the row cannot be read under RLS on purpose (`billing/customers.ts`, `billing/webhook-handlers.ts`). Comment why each time.
+- Keep the admin client out of features except where the row cannot be read or written under RLS on purpose (`billing/customers.ts`, `billing/webhook-handlers.ts`, `scraping/webhook-handlers.ts`). Comment why each time.
 - A new feature starts with the folder, `schemas.ts`, and `queries.ts`; add `actions.ts` only when it mutates data.
 - A feature's exported functions are the product's capability surface. Name them for what they do, give each a one-line doc comment, and keep the work inside the function rather than in the caller, so a form, a Route Handler, and the later AI chat or MCP surface can all call the same thing (`.claude/rules/agent-ready.md`).
