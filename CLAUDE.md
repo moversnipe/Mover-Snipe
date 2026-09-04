@@ -249,5 +249,5 @@ inline route strings · `process.env` outside `src/lib/env/` and the test
 bootstrap · `console.*` in app code (outside `logger.ts`) · editing
 `src/components/ui/` by hand (except commented fixes) · editing a committed
 migration · writing to Stripe mirror tables outside the webhook · domain logic
-only a component or a `route.ts` can call · an unbounded list read · documenting
-behaviour that does not exist.
+only a component or a `route.ts` can call · a new unbounded list read ·
+documenting behaviour that does not exist.
